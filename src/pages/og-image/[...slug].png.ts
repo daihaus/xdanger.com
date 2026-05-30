@@ -69,6 +69,18 @@ const markup = (title: string, pubDate: string) =>
     </div>
   </div>`;
 
+const rendererSignature = createHash("sha256")
+  .update(markup.toString())
+  .update(
+    JSON.stringify({
+      height: ogOptions.height,
+      renderer: "satori-resvg",
+      version: "v1",
+      width: ogOptions.width,
+    }),
+  )
+  .digest("hex");
+
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 export async function GET(context: APIContext) {
@@ -94,13 +106,17 @@ export async function GET(context: APIContext) {
 
 function getCacheFile(slug: string, title: string, postDate: string) {
   const cacheKey = createHash("sha256")
-    .update("v1")
-    .update(slug)
-    .update(title)
-    .update(postDate)
-    .update(siteConfig.title)
-    .update(siteConfig.author)
-    .update(fontSignature)
+    .update(
+      JSON.stringify({
+        author: siteConfig.author,
+        fontSignature,
+        postDate,
+        rendererSignature,
+        siteTitle: siteConfig.title,
+        slug,
+        title,
+      }),
+    )
     .digest("hex");
 
   return path.join(cacheDirectory, `${cacheKey}.png`);
@@ -108,7 +124,8 @@ function getCacheFile(slug: string, title: string, postDate: string) {
 
 async function readCachedPng(cacheFile: string) {
   try {
-    return await readFile(cacheFile);
+    const png = await readFile(cacheFile);
+    return isPng(png) ? png : undefined;
   } catch {
     return undefined;
   }
@@ -118,18 +135,33 @@ async function writeCachedPng(cacheFile: string, png: Uint8Array) {
   try {
     await mkdir(cacheDirectory, { recursive: true });
     await writeFile(cacheFile, png);
-  } catch {
+  } catch (error) {
     // Cache writes are best effort; builds should still succeed without them.
+    console.warn("og-image: failed to write cache file", cacheFile, error);
   }
 }
 
 function imageResponse(png: Uint8Array) {
-  return new Response(new Uint8Array(png), {
+  return new Response(png as BodyInit, {
     headers: {
       "Cache-Control": "public, max-age=31536000, immutable",
       "Content-Type": "image/png",
     },
   });
+}
+
+function isPng(png: Uint8Array) {
+  return (
+    png.length >= 8 &&
+    png[0] === 0x89 &&
+    png[1] === 0x50 &&
+    png[2] === 0x4e &&
+    png[3] === 0x47 &&
+    png[4] === 0x0d &&
+    png[5] === 0x0a &&
+    png[6] === 0x1a &&
+    png[7] === 0x0a
+  );
 }
 
 export async function getStaticPaths() {
