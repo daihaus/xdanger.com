@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "astro-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev"],
+      "port": 4321
+    },
+    {
+      "name": "astro-preview",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "pnpm build && pnpm preview --port 4322"],
+      "port": 4322
+    }
+  ]
+}
