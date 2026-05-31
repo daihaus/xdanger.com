@@ -53,24 +53,24 @@ pnpm install
 
 ### URL 规则
 
-本项目包含三种 URL 格式以保持向后兼容性：
+本项目保留三种 URL 形态以兼容历史链接；新增内容时以 `src/utils/url.ts`（`getPostPath` / `getCanonicalUrl`）为准：
 
 1. MoveableType 时期的文章（发布日期 < `2013-05-31`）：
 
-   - 文件路径：`src/content/post/YYYY/MM/DD/SEQ.mdx`
-   - 生成的 URL：`/YYYY/MM/DD/SEQ.html`
-   - 注意：不带 `.html` 后缀的 URL 将返回 404，这是预期行为
+   - 文件路径：`_posts/YYYY/MM/DD/SEQ.mdx`
+   - URL 形态：`/YYYY/MM/DD/SEQ.html`
 
-2. Jekyll 时期的文章 (`2013-05-31` <= 发布日期 < `2025-02-28`)：
+2. Jekyll 时期的文章（`2013-05-31` <= 发布日期 < `2025-02-28`）：
 
-   - 文件路径：`src/content/post/YYYY/MM/DD/title.mdx`
-   - 生成的 URL：`/YYYY/MM/DD/title.html`（保持与原博客完全一致的 URL 格式）
-   - 注意：不带 `.html` 后缀的 URL 将返回 404，这是预期行为
+   - 文件路径：`_posts/YYYY/MM/DD/title.mdx`
+   - URL 形态：`/YYYY/MM/DD/title.html`（与原博客完全一致）
 
-3. Astro 时期的文章 (`2025-02-28` <= 发布日期)：
+3. Astro 时期的文章（`2025-02-28` <= 发布日期）：
 
-   - 文件路径：`src/content/post/YYYY/MMDD-title.mdx`
-   - 生成的 URL：`/YYYY/MMDD-title`（更简洁的新格式，依赖 Vercel `cleanUrls`）
+   - 文件路径：`_posts/YYYY/MMDD-title.mdx`
+   - URL 形态：`/YYYY/MMDD-title`（更简洁的新格式）
+
+`getPostPath` 为所有文章统一生成带 `.html` 的内链，Vercel 的 `cleanUrls` 会在访问时去除后缀，因此带与不带 `.html` 的地址均可访问。
 
 ### 工具链
 

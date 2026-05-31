@@ -1,6 +1,7 @@
 ---
 import { Image } from "astro:assets";
 import type { WebmentionsChildren } from "@/types";
+import { safeHref } from "@/utils/webmentions";
 
 interface Props {
   mentions: WebmentionsChildren[];
@@ -26,14 +27,29 @@ const likesToShow = likes
         <ul class="flex list-none flex-wrap overflow-hidden ps-2" role="list">
           {likesToShow.map((like) => (
             <li class="p-like h-cite -ms-2">
-              <a
-                class="u-url not-prose ring-global-text hover:ring-link focus-visible:ring-link relative inline-block overflow-hidden rounded-full ring-2 hover:z-10 hover:ring-4 focus-visible:z-10 focus-visible:ring-4"
-                href={like.author?.url}
-                rel="noreferrer"
-                target="_blank"
-                title={like.author?.name}
-              >
-                <span class="p-author h-card">
+              {safeHref(like.author?.url) ? (
+                <a
+                  class="u-url not-prose ring-global-text hover:ring-link focus-visible:ring-link relative inline-block overflow-hidden rounded-full ring-2 hover:z-10 hover:ring-4 focus-visible:z-10 focus-visible:ring-4"
+                  href={safeHref(like.author?.url)}
+                  rel="noreferrer"
+                  target="_blank"
+                  title={like.author?.name}
+                >
+                  <span class="p-author h-card">
+                    <Image
+                      alt={like.author!.name}
+                      class="u-photo my-0 inline-block h-12 w-12"
+                      height={48}
+                      src={like.author!.photo}
+                      width={48}
+                    />
+                  </span>
+                </a>
+              ) : (
+                <span
+                  class="p-author h-card ring-global-text relative inline-block overflow-hidden rounded-full ring-2"
+                  title={like.author?.name}
+                >
                   <Image
                     alt={like.author!.name}
                     class="u-photo my-0 inline-block h-12 w-12"
@@ -42,7 +58,7 @@ const likesToShow = likes
                     width={48}
                   />
                 </span>
-              </a>
+              )}
             </li>
           ))}
         </ul>

@@ -5,7 +5,13 @@ import ThemeProvider from "@/components/ThemeProvider.astro";
 import Footer from "@/components/layout/Footer.astro";
 import Header from "@/components/layout/Header.astro";
 import { siteConfig } from "@/site.config";
+import type { SiteMeta } from "@/types";
 import Analytics from "@vercel/analytics/astro";
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  meta: SiteMeta & { post?: CollectionEntry<"post"> };
+}
 
 const {
   meta: { articleDate, description = siteConfig.description, ogImage, title, post },
@@ -23,13 +29,11 @@ const {
     />
   </head>
   <body class="bg-background antialiased dark:scrollbar-thumb-gray-700">
-    <div
-      class="text-foreground text-offgray dark:text-offgray-300 flex min-h-svh min-w-svw flex-col text-sm"
-    >
+    <div class="text-foreground flex min-h-svh min-w-svw flex-col text-sm">
       <ThemeProvider />
       <SkipLink />
       <Header />
-      <main id="main" class="relative flex flex-grow flex-col pt-3 sm:pt-3 [&>*]:relative">
+      <main id="main" class="relative flex flex-grow flex-col pt-3 [&>*]:relative">
         <slot />
       </main>
       <Footer />

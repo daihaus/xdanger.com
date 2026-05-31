@@ -18,7 +18,7 @@ const noteUrl = `/notes/${note.id}`;
     isPreview &&
       "group border-foreground/5 relative grid rounded-md border bg-white/75 px-4 py-3 dark:border-white/5 dark:bg-white/5",
   ]}
-  data-pagefind-body={isPreview ? false : true}
+  data-pagefind-body={!isPreview}
 >
   <Tag class:list={[isPreview ? "title text-base" : "page-title mb-3"]}>
     {
@@ -45,7 +45,7 @@ const noteUrl = `/notes/${note.id}`;
     date={note.data.publishDate}
   />
   <div
-    class="prose prose-sm prose-cactus sm:prose-base mt-4 max-w-none [&>p:last-of-type]:mb-0"
+    class="prose prose-sm sm:prose-base mt-4 max-w-none [&>p:last-of-type]:mb-0"
     class:list={{ "line-clamp-6 [&_a]:relative [&_a]:z-10": isPreview }}
   >
     <Content />

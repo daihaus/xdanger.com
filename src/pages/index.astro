@@ -1,5 +1,5 @@
 ---
-import { type CollectionEntry, getCollection } from "astro:content";
+import { getCollection } from "astro:content";
 import AboutMe from "@/components/AboutMe.astro";
 import HomePostPreview from "@/components/blog/HomePostPreview.astro";
 import Note from "@/components/note/Note.astro";
@@ -11,9 +11,7 @@ import { collectionDateSort } from "@/utils/date";
 // Posts
 const MAX_POSTS = 10;
 const allPosts = await getAllPosts();
-const allPostsByDate = allPosts
-  .sort(collectionDateSort)
-  .slice(0, MAX_POSTS) as CollectionEntry<"post">[];
+const allPostsByDate = allPosts.sort(collectionDateSort).slice(0, MAX_POSTS);
 
 // Notes
 const MAX_NOTES = 5;

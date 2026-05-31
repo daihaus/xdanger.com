@@ -4,11 +4,11 @@ import type { CollectionEntry } from "astro:content";
 import FormattedDate from "@/components/FormattedDate.astro";
 
 interface Props {
-  content: CollectionEntry<"post">;
+  post: CollectionEntry<"post">;
 }
 
 const {
-  content: { data },
+  post: { data },
 } = Astro.props;
 const subtitle = data.subtitle ?? data.description;
 
