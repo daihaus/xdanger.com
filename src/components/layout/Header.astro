@@ -6,7 +6,7 @@ import { siteConfig } from "@/site.config";
 <header
   data-collapsed="false"
   id="site-header"
-  style="--header-collapse-offset: 0px; --header-padding-y: 3rem; --header-padding-y-sm: 4.5rem; --header-padding-y-md: 6rem; --header-tagline-max-height: 2rem; --header-tagline-margin-top: 0.25rem; --header-tagline-opacity: 1;"
+  style="--header-collapse-offset: 0px;"
   class="pointer-events-none sticky top-0 z-50 w-full"
 >
   <div
@@ -76,6 +76,7 @@ import { siteConfig } from "@/site.config";
 
   let compactScrollY = 192;
   let ticking = false;
+  let measureTicking = false;
 
   function setHeaderExpandedness(siteHeader: HTMLElement, expandedness: number) {
     const paddingY = COMPACT_PADDING_Y + (EXPANDED_PADDING_Y - COMPACT_PADDING_Y) * expandedness;
@@ -135,10 +136,27 @@ import { siteConfig } from "@/site.config";
     });
   }
 
-  measureHeaderCollapseDistance();
-  document.addEventListener("scroll", scheduleHeaderCollapseUpdate, { passive: true });
-  window.addEventListener("resize", measureHeaderCollapseDistance);
-  document.addEventListener("astro:after-swap", () => {
+  function scheduleHeaderCollapseMeasure() {
+    if (measureTicking) return;
+
+    measureTicking = true;
+    window.requestAnimationFrame(() => {
+      measureHeaderCollapseDistance();
+      measureTicking = false;
+    });
+  }
+
+  function measureHeaderCollapseDistanceWithFonts() {
     measureHeaderCollapseDistance();
+    if (document.fonts?.ready) {
+      void document.fonts.ready.then(scheduleHeaderCollapseMeasure);
+    }
+  }
+
+  measureHeaderCollapseDistanceWithFonts();
+  document.addEventListener("scroll", scheduleHeaderCollapseUpdate, { passive: true });
+  window.addEventListener("resize", scheduleHeaderCollapseMeasure);
+  document.addEventListener("astro:after-swap", () => {
+    measureHeaderCollapseDistanceWithFonts();
   });
 </script>

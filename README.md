@@ -113,5 +113,5 @@ pnpm install
 
 ## LICENSE
 
-- 代码部分：遵循 Astro 的 MIT 协议
-- 文章内容：采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+本仓库采用 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) 授权，详见
+[`LICENSE`](./LICENSE)。第三方依赖和 `public/assets/` 中保留的第三方素材仍遵循其各自的上游许可。

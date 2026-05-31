@@ -1,6 +1,7 @@
 {
   "name": "eccentric-event",
   "version": "6.2.0",
+  "license": "CC-BY-SA-4.0",
   "type": "module",
   "packageManager": "pnpm@10.33.4",
   "engines": {
