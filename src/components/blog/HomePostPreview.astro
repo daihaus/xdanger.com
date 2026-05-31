@@ -14,7 +14,7 @@ const subtitle = post.data.subtitle?.trim();
 ---
 
 <a
-  class="group -mx-3 block cursor-pointer px-3 transition-colors hover:bg-gray-200/10"
+  class="focus-visible:outline-accent group -mx-3 block cursor-pointer px-3 transition-colors hover:bg-gray-200/10 focus-visible:bg-gray-200/10 focus-visible:outline-2 focus-visible:outline-offset-2"
   data-astro-prefetch
   href={postUrl}
 >
@@ -27,7 +27,9 @@ const subtitle = post.data.subtitle?.trim();
     <div>
       <Tag class="font-plex-serif text-lg leading-tight text-pretty sm:text-xl">
         {post.data.draft && <span class="text-red-500">(Draft) </span>}
-        <span class="text-accent-2 group-hover:text-accent transition-colors">
+        <span
+          class="text-accent-2 group-hover:text-accent group-focus-visible:text-accent transition-colors"
+        >
           <span class="sr-only">Read </span>
           {post.data.title}
         </span>
