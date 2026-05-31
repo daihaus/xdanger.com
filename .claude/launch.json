@@ -10,7 +10,7 @@
     {
       "name": "astro-preview",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "pnpm build:site && pnpm preview --port 4322"],
+      "runtimeArgs": ["-c", "pnpm build && pnpm preview --port 4322"],
       "port": 4322
     }
   ]
