@@ -19,7 +19,7 @@ export function getPostPath(post: CollectionEntry<"post">): string {
  * @returns 规范化的 URL 路径
  */
 export function getCanonicalUrl(post: CollectionEntry<"post">): string {
-  // getPostPath 已返回以 `/` 开头的路径，交给 URL 构造器拼接可避免与
-  // siteConfig.url 的结尾斜杠叠加出 `//` / `///` 这类畸形 canonical 地址。
+  // getPostPath 已返回以 `/` 开头的路径；以 import.meta.env.SITE 为 base 交给 URL
+  // 构造器拼接，可避免 base 结尾斜杠与路径开头斜杠叠加出 `//` / `///` 的畸形 canonical。
   return new URL(getPostPath(post), import.meta.env.SITE).href;
 }
