@@ -159,7 +159,7 @@
   --color-accent-2: oklch(18.15% 0 0);
   --color-quote: oklch(55.27% 0.195 19.06);
   /* --color-quote: var(--muted-foreground); */
-  --font-alias-plexSerif: "LXGW Bright", ui-serif, serif;
+  --font-alias-plexSerif: "LXGW Bright Medium", "LXGW Bright", ui-serif, serif;
   --font-alias-plexSans: "iA Writer Quattro", ui-sans-serif, system-ui, sans-serif;
   --font-alias-writer: "LXGW Bright", ui-sans-serif, system-ui, sans-serif;
   --font-alias-plexMono: "iA Writer Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
