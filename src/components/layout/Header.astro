@@ -6,7 +6,6 @@ import { siteConfig } from "@/site.config";
 <header
   data-collapsed="false"
   id="site-header"
-  style="--header-collapse-offset: 0px;"
   class="pointer-events-none sticky top-0 z-50 w-full"
 >
   <div
@@ -156,7 +155,4 @@ import { siteConfig } from "@/site.config";
   measureHeaderCollapseDistanceWithFonts();
   document.addEventListener("scroll", scheduleHeaderCollapseUpdate, { passive: true });
   window.addEventListener("resize", scheduleHeaderCollapseMeasure);
-  document.addEventListener("astro:after-swap", () => {
-    measureHeaderCollapseDistanceWithFonts();
-  });
 </script>

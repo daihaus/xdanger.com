@@ -79,7 +79,7 @@ eslint.config.js      # ESLint flat config
 ## URL formats
 
 The site preserves three URL conventions for backward compatibility — see `README.md`'s
-"URL 规则" section. Treat `src/utils/url.ts` (`getBlogEra`, `getPostPath`) as the source of
+"URL 规则" section. Treat `src/utils/url.ts` (`getPostPath`, `getCanonicalUrl`) as the source of
 truth when adding new content.
 
 1. **MoveableType era** (publish date < `2013-05-31`): `/YYYY/MM/DD/SEQ.html`

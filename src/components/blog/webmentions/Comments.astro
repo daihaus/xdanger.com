@@ -1,6 +1,7 @@
 ---
 import { Image } from "astro:assets";
 import type { WebmentionsChildren } from "@/types";
+import { safeHref } from "@/utils/webmentions";
 import { Icon } from "astro-icon/components";
 
 interface Props {
@@ -26,10 +27,10 @@ const comments = mentions.filter(
         {comments.map((mention) => (
           <li class="p-comment h-cite my-0 flex items-start gap-x-5 py-5">
             {mention.author?.photo && mention.author.photo !== "" ? (
-              mention.author.url && mention.author.url !== "" ? (
+              safeHref(mention.author.url) ? (
                 <a
                   class="u-author not-prose ring-global-text hover:ring-link focus-visible:ring-link shrink-0 overflow-hidden rounded-full ring-2 hover:ring-4 focus-visible:ring-4"
-                  href={mention.author.url}
+                  href={safeHref(mention.author.url)}
                   rel="noreferrer"
                   target="_blank"
                   title={mention.author.name}
@@ -57,23 +58,25 @@ const comments = mentions.filter(
                 <p class="p-name text-accent-2 my-0 line-clamp-1 font-semibold">
                   {mention.author?.name}
                 </p>
-                <a
-                  aria-labelledby="cmt-source"
-                  class="u-url not-prose hover:text-link"
-                  href={mention.url}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  <span class="hidden" id="cmt-source">
-                    Visit the source of this webmention
-                  </span>
-                  <Icon
-                    aria-hidden="true"
-                    class="h-5 w-5"
-                    focusable="false"
-                    name="mdi:open-in-new"
-                  />
-                </a>
+                {safeHref(mention.url) && (
+                  <a
+                    aria-labelledby={`cmt-source-${mention["wm-id"]}`}
+                    class="u-url not-prose hover:text-link"
+                    href={safeHref(mention.url)}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    <span class="hidden" id={`cmt-source-${mention["wm-id"]}`}>
+                      Visit the source of this webmention
+                    </span>
+                    <Icon
+                      aria-hidden="true"
+                      class="h-5 w-5"
+                      focusable="false"
+                      name="mdi:open-in-new"
+                    />
+                  </a>
+                )}
               </div>
               <p class="comment-content mt-1 mb-0 break-words [word-break:break-word]">
                 {mention.content?.text}
