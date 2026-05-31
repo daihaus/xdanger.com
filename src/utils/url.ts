@@ -51,6 +51,7 @@ export function getPostPath(post: CollectionEntry<"post">): string {
  * @returns 规范化的 URL 路径
  */
 export function getCanonicalUrl(post: CollectionEntry<"post">): string {
-  const siteUrl = import.meta.env.SITE;
-  return `${siteUrl}/${getPostPath(post)}`;
+  // getPostPath 已返回以 `/` 开头的路径，交给 URL 构造器拼接可避免与
+  // siteConfig.url 的结尾斜杠叠加出 `//` / `///` 这类畸形 canonical 地址。
+  return new URL(getPostPath(post), import.meta.env.SITE).href;
 }
