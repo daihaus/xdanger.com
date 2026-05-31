@@ -25,7 +25,7 @@ export async function GET() {
 
   // 生成笔记的 URL 条目
   const noteEntries = notes.map((note) => {
-    const noteUrl = `${siteConfig.url}/notes/${note.id}`;
+    const noteUrl = new URL(`notes/${note.id}`, siteConfig.url).href;
     const lastmod = note.data.publishDate;
 
     return `
@@ -38,34 +38,17 @@ export async function GET() {
     `;
   });
 
-  // 添加静态页面
+  // 添加静态页面（相对路径交给 URL 构造器拼接，避免结尾斜杠叠加出 `//`）
   const staticPages = [
-    {
-      url: siteConfig.url,
-      priority: 1.0,
-      changefreq: "daily",
-    },
-    {
-      url: `${siteConfig.url}/about`,
-      priority: 0.8,
-      changefreq: "monthly",
-    },
-    {
-      url: `${siteConfig.url}/posts`,
-      priority: 0.9,
-      changefreq: "daily",
-    },
-    {
-      url: `${siteConfig.url}/notes`,
-      priority: 0.8,
-      changefreq: "weekly",
-    },
-    {
-      url: `${siteConfig.url}/tags`,
-      priority: 0.7,
-      changefreq: "weekly",
-    },
-  ];
+    { path: "/", priority: 1.0, changefreq: "daily" },
+    { path: "about", priority: 0.8, changefreq: "monthly" },
+    { path: "posts", priority: 0.9, changefreq: "daily" },
+    { path: "notes", priority: 0.8, changefreq: "weekly" },
+    { path: "tags", priority: 0.7, changefreq: "weekly" },
+  ].map((page) => ({
+    ...page,
+    url: new URL(page.path, siteConfig.url).href,
+  }));
 
   const staticEntries = staticPages.map(
     (page) => `
