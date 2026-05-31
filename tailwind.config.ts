@@ -32,8 +32,13 @@ export default {
             hr: {
               borderTopStyle: "solid",
             },
+            em: {
+              fontStyle: "normal",
+            },
             strong: {
-              fontWeight: "700",
+              fontFamily: "var(--font-alias-plexSerifMedium)",
+              fontStyle: "normal",
+              fontWeight: "500",
             },
             sup: {
               marginInlineStart: "calc(var(--spacing) * 0.5)",
@@ -63,7 +68,7 @@ export default {
             },
             "thead th": {
               borderBottom: "1px solid #666",
-              fontWeight: "700",
+              fontWeight: "500",
             },
             'th[align="center"], td[align="center"]': {
               "text-align": "center",
