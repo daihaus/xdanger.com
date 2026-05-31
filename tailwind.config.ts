@@ -33,7 +33,9 @@ export default {
               borderTopStyle: "solid",
             },
             em: {
+              fontFamily: "var(--font-alias-plexSerifMedium)",
               fontStyle: "normal",
+              fontWeight: "500",
             },
             strong: {
               fontFamily: "var(--font-alias-plexSerifMedium)",
