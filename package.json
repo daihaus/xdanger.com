@@ -1,6 +1,7 @@
 {
   "name": "eccentric-event",
   "version": "6.2.0",
+  "license": "CC-BY-SA-4.0",
   "type": "module",
   "packageManager": "pnpm@10.33.4",
   "engines": {
@@ -56,6 +57,7 @@
     "@astrojs/check": "^0.9.9",
     "@eslint/js": "^10.0.1",
     "@iconify-json/fa6-brands": "^1.2.6",
+    "@iconify-json/line-md": "^1.2.16",
     "@iconify-json/material-symbols-light": "^1.2.75",
     "@iconify-json/mdi": "^1.2.3",
     "@iconify-json/solar": "^1.2.5",
