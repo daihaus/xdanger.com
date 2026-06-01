@@ -9,7 +9,7 @@ import { siteConfig } from "@/site.config";
   class="pointer-events-none sticky top-0 z-50 w-full"
 >
   <div
-    class="site-header-glass bg-background/95 supports-[backdrop-filter]:bg-background/60 [[data-collapsed=true]_&]:border-foreground/10 pointer-events-auto w-full border-b-0 border-solid border-transparent transition-colors [[data-collapsed=true]_&]:border-b"
+    class="site-header-glass bg-background/95 supports-[backdrop-filter]:bg-background/60 [[data-collapsed=true]_&]:border-foreground/10 pointer-events-auto w-full border-b-0 border-solid border-transparent transition [[data-collapsed=true]_&]:border-b"
   >
     <div class="site-header-shell page-shell relative z-10 flex items-start justify-between gap-4">
       <div>
@@ -58,7 +58,10 @@ import { siteConfig } from "@/site.config";
     /*
      * box-shadow stacks two layers via custom properties: a top rim highlight
      * (always on) and a drop shadow that stays invisible until the header
-     * collapses, when it lifts the bar a hair off the content below.
+     * collapses, when it lifts the bar a hair off the content below. The
+     * element carries Tailwind's `transition` utility (not `transition-colors`)
+     * so this box-shadow fades in/out on collapse instead of popping — the drop
+     * layer interpolates from transparent to its lifted value.
      */
     --header-glass-rim: oklch(100% 0 0 / 0.45);
     --header-glass-drop: 0 0 #0000;
