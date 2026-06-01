@@ -113,8 +113,15 @@ import { siteConfig } from "@/site.config";
     }
 
     /* Theme toggle eases down with the title so the collapsed row narrows to
-       20px (taking the fully-collapsed bar to ~44px) and the two stay matched. */
-    :global(#site-header theme-toggle button),
+       20px (taking the fully-collapsed bar to ~44px) and the two stay matched.
+       The button keeps a `color` transition so ThemeToggle's hover fade (its
+       `transition-colors` utility) survives this shorthand override. */
+    :global(#site-header theme-toggle button) {
+      transition:
+        color 150ms ease,
+        height 500ms ease,
+        width 500ms ease;
+    }
     :global(#site-header theme-toggle button svg) {
       transition:
         height 500ms ease,
