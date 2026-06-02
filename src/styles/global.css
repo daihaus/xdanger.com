@@ -211,8 +211,14 @@
     min-height: 100%;
     background-color: var(--color-background);
   }
-  :where(h1, h2, h3, h4, h5, h6) {
+  /* Plain (not :where) so font-weight beats Preflight's `h1-h6 { font-weight:
+   * inherit }`. The old "LXGW Bright Medium" family carried only the Medium cut,
+   * so headings rendered Medium with no explicit weight; the new single-family
+   * source needs weight 500 stated outright. Utilities (font-medium, prose
+   * typography) sit in later layers and still override both. */
+  h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-alias-plexSerifMedium);
+    font-weight: 500;
   }
 
   :where(code, kbd, samp, pre) {
