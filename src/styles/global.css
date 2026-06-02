@@ -287,6 +287,18 @@
   :where(code, kbd, samp, pre) {
     font-family: var(--font-alias-plexMono);
   }
+
+  /* Inline-code chip for non-article code (e.g. the "xdanger" handle): a faint
+   * neutral background like a chat UI, instead of the red accent that reads as a
+   * link. Scoped out of article `prose` (the typography plugin owns that) and
+   * out of code blocks (`pre code`). */
+  code:not(:where(pre code, .prose code)) {
+    border-radius: 0.25rem;
+    background-color: color-mix(in oklab, var(--color-foreground) 5%, transparent);
+    padding-inline: 0.375rem;
+    padding-block: 0.125rem;
+    font-size: 0.9em;
+  }
 }
 
 * {
