@@ -267,14 +267,15 @@
     min-height: 100%;
     background-color: var(--color-background);
   }
-  /* Plain (not :where) so font-weight beats Preflight's
-   * `h1, h2, h3, h4, h5, h6 { font-weight: inherit }`. The old "LXGW Bright
-   * Medium" family carried only the Medium cut, so headings rendered Medium with
-   * no explicit weight; the new single-family source needs weight 500 stated
-   * outright. Utilities (font-medium, prose typography) sit in later layers and
-   * still override both. */
+  /* Default heading family is writer (Inter). The named title utilities
+   * (page-title, article-title, section-heading, title) and prose headings opt
+   * back into plexSerif themselves; this is just the fallback for "naked"
+   * headings. Plain (not :where) so font-weight beats Preflight's
+   * `h1, h2, h3, h4, h5, h6 { font-weight: inherit }` — Inter Variable spans the
+   * full weight range, so 500 is stated outright. Utilities (font-medium, the
+   * named title utilities, prose typography) sit in later layers and override. */
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-alias-plexSerifMedium);
+    font-family: var(--font-alias-writer);
     font-weight: 500;
   }
   /* Only the top two headings keep Medium; h3–h6 drop to normal weight so CJK
