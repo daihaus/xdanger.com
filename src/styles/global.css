@@ -338,8 +338,7 @@
 }
 
 @utility subtitle {
-  @apply font-plex-serif mt-2 mb-8 max-w-3xl text-base leading-snug text-gray-700 sm:text-lg
-    dark:text-gray-400;
+  @apply mt-2 mb-8 max-w-3xl text-base leading-snug text-gray-700 sm:text-lg dark:text-gray-400;
 }
 
 @utility section-heading {
