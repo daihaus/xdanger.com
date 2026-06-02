@@ -301,6 +301,20 @@
   @apply text-accent-2 font-plex-serif-medium text-2xl font-medium;
 }
 
+/* Reusable inline typography classes, applied element-by-element.
+ * note → body-ish small sans; date → mono timestamps; heading → small writer-font title. */
+@utility note {
+  @apply font-plex-sans text-[13px];
+}
+
+@utility date {
+  @apply font-plex-mono text-[13px];
+}
+
+@utility heading {
+  @apply font-writer text-base;
+}
+
 @utility page-shell {
   @apply container mx-auto max-w-3xl px-4 sm:px-6;
 }

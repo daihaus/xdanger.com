@@ -20,11 +20,11 @@ const subtitle = post.data.subtitle?.trim();
 >
   <article class="grid gap-3 py-5 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-8">
     <FormattedDate
-      class="pt-1 text-xs text-gray-600 sm:text-right dark:text-gray-400"
+      class="date pt-1 text-gray-600 sm:text-right dark:text-gray-400"
       date={post.data.publishDate}
     />
     <div>
-      <Tag class="font-plex-sans text-base leading-tight text-pretty">
+      <Tag class="heading leading-tight text-pretty">
         {post.data.draft && <span class="text-red-500">(Draft) </span>}
         <span
           class="text-accent-2 group-hover:text-accent group-focus-visible:text-accent transition-colors"
