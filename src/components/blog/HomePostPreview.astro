@@ -20,9 +20,8 @@ const subtitle = post.data.subtitle?.trim();
 >
   <article class="grid gap-3 py-5 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-8">
     <FormattedDate
-      class="pt-1 text-[13px] text-gray-600 uppercase sm:text-right dark:text-gray-400"
+      class="pt-1 text-xs text-gray-600 sm:text-right dark:text-gray-400"
       date={post.data.publishDate}
-      dateTimeOptions={{ day: "numeric" }}
     />
     <div>
       <Tag class="font-plex-serif text-base leading-tight text-pretty">
