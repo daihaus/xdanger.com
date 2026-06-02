@@ -294,6 +294,28 @@
   scrollbar-color: var(--border) transparent;
 }
 
+/* Site-wide link affordance: every link reads as a link via a faint 1px underline
+ * that darkens to the text colour on hover (hover just drops the faded color back
+ * to currentColor). Unlayered on purpose so it overrides Preflight, the prose
+ * plugin, and cactus-link for one consistent treatment — no `.no-underline`
+ * opt-outs exist in the codebase. Opted out: the header/footer chrome, icon/avatar
+ * links (:has(svg, img)) where the line would cross the graphic, and `.not-prose`
+ * links (heading self-anchors, webmention avatars) — kept in a separate rule so a
+ * class selector doesn't outweigh the chrome exclusion. */
+a:not(:has(svg, img)) {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  text-decoration-color: color-mix(in oklab, currentColor 30%, transparent);
+}
+a:not(:has(svg, img)):hover {
+  text-decoration-color: currentColor;
+}
+:is(header, footer) a,
+a.not-prose {
+  text-decoration-line: none;
+}
+
 @utility cactus-link {
   @apply hover:decoration-link underline underline-offset-2 hover:decoration-2;
 }
