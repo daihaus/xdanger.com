@@ -25,9 +25,43 @@ import rehypeExternalLinks from "rehype-external-links";
 import rehypeKatex from "rehype-katex";
 import rehypeUnwrapImages from "rehype-unwrap-images";
 
+// Optional HTTPS for remote debugging over Tailscale via anyip.dev.
+// `<dashed-ip>.anyip.dev` resolves back to the embedded IP and anyip publishes a
+// real Let's Encrypt wildcard cert for `*.anyip.dev` (private key intentionally
+// public — same security as plain HTTP, which is fine since Tailscale already
+// encrypts the transport). Drop the cert into `.cert/anyip/` (git-ignored via
+// *.pem) and the dev server auto-serves HTTPS so secure-context APIs work:
+//   pnpm cert:anyip   # downloads fullchain.pem + privkey.pem into .cert/anyip/
+// Then open e.g. https://100-77-4-5.anyip.dev:4321 (your Tailscale IP, dashed).
+const anyipCert = "./.cert/anyip/fullchain.pem";
+const anyipKey = "./.cert/anyip/privkey.pem";
+// Guarded: this also runs during `pnpm build`, so a corrupt/unreadable cert
+// must never abort the build — fall back to plain HTTP dev instead.
+const devHttps = (() => {
+  try {
+    if (fs.existsSync(anyipCert) && fs.existsSync(anyipKey)) {
+      return { cert: fs.readFileSync(anyipCert), key: fs.readFileSync(anyipKey) };
+    }
+  } catch {
+    // fall through to undefined
+  }
+  return undefined;
+})();
+
 // https://astro.build/config
 export default defineConfig({
   // adapter: vercel(),
+  // Dev server. Only bind to all interfaces when the anyip cert is present
+  // (i.e. you've opted into HTTPS remote debugging over Tailscale). Without the
+  // cert, fall back to Astro's localhost-only default so a plain `pnpm dev` is
+  // never exposed to the LAN.
+  //
+  // No `allowedHosts` here: Vite skips its host-header allowlist entirely when
+  // the dev server runs over HTTPS (https://vite.dev/config/server-options),
+  // so it can't guard this path. DNS-rebinding is instead limited by Vite's
+  // default CORS policy (only localhost origins may read responses) plus
+  // keeping this all-interfaces bind gated behind the HTTPS opt-in above.
+  server: devHttps ? { host: true, port: 4321 } : undefined,
   build: {
     // 干净 URL 默认：每个页面输出为 `<path>/index.html`。历史文章随后由
     // `legacyHtmlFlattener` 钩子还原成扁平 `<path>.html`（见文件底部）。
@@ -153,6 +187,12 @@ export default defineConfig({
       exclude: ["@resvg/resvg-js"],
     },
     plugins: [tailwindcss(), rawFonts([".ttf", ".woff"])],
+    // `devHttps` is undefined unless the anyip cert is present, so this is a
+    // no-op for normal local dev and only flips the dev server to HTTPS when
+    // you've downloaded the cert (see the note near the top of this file).
+    server: {
+      https: devHttps,
+    },
   },
   env: {
     schema: {
