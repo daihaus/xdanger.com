@@ -17,7 +17,7 @@
     "build:search": "pagefind --site dist",
     "rebuild": "pnpm run build:site",
     "rebuild:og": "cross-env REFRESH_OG_IMAGES=1 pnpm run build:site",
-    "preview": "astro preview",
+    "preview": "pnpm dlx serve dist -l 4321 -c ../serve.json --no-port-switching",
     "lint": "autocorrect --lint --strict . && prettier --check . && eslint . && astro check --tsconfig tsconfig.json",
     "fix": "autocorrect --fix . && prettier --write . && eslint --fix ."
   },
