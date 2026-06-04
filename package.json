@@ -18,7 +18,7 @@
     "build:search": "pagefind --site dist",
     "rebuild": "pnpm run build:site",
     "rebuild:og": "cross-env REFRESH_OG_IMAGES=1 pnpm run build:site",
-    "preview": "sh scripts/preview.sh",
+    "preview": "node scripts/preview-server.mjs",
     "lint": "autocorrect --lint --strict . && prettier --check . && eslint . && astro check --tsconfig tsconfig.json",
     "fix": "autocorrect --fix . && prettier --write . && eslint --fix ."
   },

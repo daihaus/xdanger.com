@@ -34,7 +34,7 @@ pnpm build:site     # Astro-only build for faster local rebuild checks
 pnpm build:debug    # Astro build with NODE_OPTIONS=--trace-warnings
 pnpm run rebuild        # Astro-only rebuild; reuse cached OG image PNG and fill missing ones
 pnpm run rebuild:og     # force-refresh all OG image PNG in the local cache
-pnpm preview        # serve dist/ via a plain static server (serve, cleanUrls:false) — 1:1 with prod URLs; do NOT use `astro preview` for URL checks
+pnpm preview        # serve dist/ via scripts/preview-server.mjs — faithful prod static mirror (try_files $uri $uri/index.html =404); do NOT use `astro preview` for URL checks
 pnpm lint           # autocorrect + prettier --check + eslint + astro check
 pnpm fix            # autocorrect + prettier --write + eslint --fix
 ```

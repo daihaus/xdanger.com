@@ -36,7 +36,7 @@ pnpm install
 | `pnpm build:debug`  | 带 `NODE_OPTIONS=--trace-warnings` 运行 Astro 构建            |
 | `pnpm run rebuild`    | 只重新执行 Astro 构建，复用已有 OG image PNG，只补缺失图片 |
 | `pnpm run rebuild:og` | 强制刷新全部 OG image PNG，并写回本地缓存                  |
-| `pnpm preview`      | 用纯静态服务器（`serve`，`cleanUrls:false`）伺服 `dist/`，1:1 复现线上 URL 行为 |
+| `pnpm preview`      | 用 `scripts/preview-server.mjs`（忠实复刻线上 `try_files $uri $uri/index.html =404`）伺服 `dist/`，1:1 复现线上 URL 行为 |
 | `pnpm lint`         | 运行 autocorrect / prettier / eslint / astro check 全套检查 |
 | `pnpm fix`          | 自动修复格式与可修复的 lint 问题                             |
 
@@ -81,7 +81,7 @@ pnpm install
 历史文章（①②）在 `astro:build:done` 钩子（`astro.config.ts` 的 `legacyHtmlFlattener`）里被还原成
 扁平 `<path>.html` 文件，以原样伺服历史 `.html` 链接。整套 URL 契约都写在静态产物里，因此
 任意静态 host（Vercel / GitHub Pages）行为一致、可移植。本地 `pnpm preview`
-（纯静态 `serve`，配置见根目录 `serve.json`）伺服 `dist/`，即可 1:1 复现线上的链接 / 跳转 / 404。
+（`scripts/preview-server.mjs`，按 `try_files $uri $uri/index.html =404` 解析，等价于任意静态 host）伺服 `dist/`，即可 1:1 复现线上的链接 / 跳转 / 404。
 注意不要用 `astro preview`（带路由魔法：对重定向发 3xx、对历史无后缀做 `.html` 回退），不反映线上。
 
 ### 工具链
