@@ -57,6 +57,10 @@ machine's Tailscale IP with dots written as dashes — look it up with `tailscal
 (anyip resolves the embedded IP back, plus a Let's Encrypt wildcard cert for `*.anyip.dev` whose
 private key is intentionally public) is documented in the note atop `astro.config.ts`.
 
+> **Heads-up:** with the cert present the dev server binds to all interfaces (`0.0.0.0`), so it's
+> reachable not only over Tailscale but on any LAN the machine is attached to — enable it only on
+> networks you trust, or add a firewall rule. Without the cert, `pnpm dev` stays on `localhost`.
+
 ### File-level checks
 
 When you edit a file by hand, run the appropriate checks before committing:
