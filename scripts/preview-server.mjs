@@ -167,7 +167,13 @@ function handler(req, res) {
   if (req.method === "HEAD") {
     res.end();
   } else {
-    createReadStream(file).pipe(res);
+    // `pipe` does not forward source errors, so a read failure (e.g. the file is
+    // removed between statSync and read) would otherwise throw uncaught and kill
+    // the process. Listen and tear the response down instead. (No path in the log
+    // → no CodeQL log-injection regression.)
+    const stream = createReadStream(file);
+    stream.on("error", () => res.destroy());
+    stream.pipe(res);
   }
   log(req, 200);
 }
