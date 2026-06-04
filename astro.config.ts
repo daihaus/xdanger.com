@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
@@ -6,6 +7,7 @@ import expressiveCode from "astro-expressive-code";
 import icon from "astro-icon";
 import robotsTxt from "astro-robots-txt";
 import webmanifest from "astro-webmanifest";
+import type { AstroIntegration } from "astro";
 import { defineConfig, envField } from "astro/config";
 import { expressiveCodeOptions } from "./src/site.config";
 import { siteConfig } from "./src/site.config";
@@ -61,8 +63,10 @@ export default defineConfig({
   // keeping this all-interfaces bind gated behind the HTTPS opt-in above.
   server: devHttps ? { host: true, port: 4321 } : undefined,
   build: {
+    // 干净 URL 默认：每个页面输出为 `<path>/index.html`。历史文章随后由
+    // `legacyHtmlFlattener` 钩子还原成扁平 `<path>.html`（见文件底部）。
     // https://docs.astro.build/zh-cn/reference/configuration-reference/#buildformat
-    format: "preserve",
+    format: "directory",
   },
   image: {
     domains: ["webmention.io"],
@@ -73,6 +77,23 @@ export default defineConfig({
     sitemap({
       changefreq: "weekly",
       priority: 0.5,
+      // 排除 ③→④ 与旧笔记的重定向桩（只是跳转，不应进 sitemap）
+      filter: (page) => {
+        const path = new URL(page).pathname.replace(/\/$/, "");
+        if (/^\/\d{4}\/\d{4}-[^/]+$/.test(path)) return false;
+        if (path === "/notes/welcome") return false;
+        return true;
+      },
+      // 历史文章在 sitemap 中输出为 `.html`，与钩子还原后的实际文件保持一致
+      serialize: (item) => {
+        const url = new URL(item.url);
+        const path = url.pathname.replace(/\/$/, "");
+        if (/^\/\d{4}\/\d{2}\/\d{2}\/[^/]+$/.test(path)) {
+          url.pathname = `${path}.html`;
+          item.url = url.href;
+        }
+        return item;
+      },
     }),
     mdx(),
     robotsTxt(),
@@ -110,6 +131,8 @@ export default defineConfig({
         insertManifestLink: false,
       },
     }),
+    // 干净 URL 例外：把历史文章从 `<path>/index.html` 还原成扁平 `<path>.html`
+    legacyHtmlFlattener(),
   ],
   markdown: {
     // Astro 6 deprecated the top-level `remarkPlugins`/`rehypePlugins`/`remarkRehype`
@@ -144,6 +167,23 @@ export default defineConfig({
     }),
   },
   output: "static",
+  // 每条 redirect 在静态产物里是一张带 canonical + noindex 的 meta-refresh 桩
+  // （200 HTML，供 GitHub Pages 等任意静态 host 兜底）；Vercel 上再由 vercel.json
+  // 的 redirects 升级为真正的 308 永久重定向（本地 pnpm preview 也读 vercel.json
+  // 复现 308）。两处的源/目标须保持一致。
+  redirects: {
+    // ③/旧 .html → ④：[2025-02-28, 2026-06-04) 间这两篇 Astro 文章曾以 ③
+    // `/YYYY/MMDD-slug`（无后缀）和旧 getPostPath 的 `….html` 形态发布过，一并
+    // 重定向到 ④ `/slug-YYYYMMDD`。冻结集，此后新文章直接以 ④ 发布。
+    "/2025/0315-multiplanet-civilization-v-earth-gravity":
+      "/multiplanet-civilization-v-earth-gravity-20250315",
+    "/2025/0315-multiplanet-civilization-v-earth-gravity.html":
+      "/multiplanet-civilization-v-earth-gravity-20250315",
+    "/2025/0504-berkshire-hathaway": "/berkshire-hathaway-20250504",
+    "/2025/0504-berkshire-hathaway.html": "/berkshire-hathaway-20250504",
+    // 旧笔记 URL → 新 `<slug>-<YYYYMMDD>` 形态
+    "/notes/welcome": "/notes/welcome-20250514",
+  },
   // https://docs.astro.build/en/guides/prefetch/
   prefetch: true,
   site: siteConfig.url,
@@ -181,6 +221,37 @@ export default defineConfig({
     },
   },
 });
+
+/**
+ * `build.format: "directory"` 把每个页面输出为 `<path>/index.html`（干净 URL）。
+ * 历史文章（MoveableType / Jekyll，路径形如 `YYYY/MM/DD/x`）需保留扁平 `.html`
+ * 以原样伺服历史链接，故在此钩子里把它们从 `<path>/index.html` 还原成 `<path>.html`
+ * 并删除空目录。钩子在 `astro build` 内执行，早于 `pagefind --site dist`，因此搜索
+ * 索引到的是还原后的最终布局。
+ */
+function legacyHtmlFlattener(): AstroIntegration {
+  const LEGACY_PAGE_RE = /^\/?(\d{4}\/\d{2}\/\d{2}\/[^/]+)\/?$/;
+  return {
+    name: "legacy-html-flattener",
+    hooks: {
+      "astro:build:done": async ({ dir, pages, logger }) => {
+        let flattened = 0;
+        for (const { pathname } of pages) {
+          const match = pathname.match(LEGACY_PAGE_RE);
+          if (!match) continue;
+          const rel = match[1];
+          const fromFile = fileURLToPath(new URL(`${rel}/index.html`, dir));
+          const toFile = fileURLToPath(new URL(`${rel}.html`, dir));
+          const fromDir = fileURLToPath(new URL(`${rel}/`, dir));
+          await fs.promises.rename(fromFile, toFile);
+          await fs.promises.rmdir(fromDir);
+          flattened += 1;
+        }
+        logger.info(`已将 ${flattened} 篇历史文章还原为扁平 .html`);
+      },
+    },
+  };
+}
 
 function rawFonts(ext: string[]) {
   return {
