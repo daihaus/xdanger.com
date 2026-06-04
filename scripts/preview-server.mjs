@@ -28,7 +28,7 @@
 import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { createServer as createHttpServer } from "node:http";
 import { createServer as createHttpsServer } from "node:https";
-import { extname, join, resolve, sep } from "node:path";
+import { extname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(fileURLToPath(new URL("../dist", import.meta.url)));
@@ -84,9 +84,13 @@ function resolveFile(pathname) {
   }
   if (decoded.includes("\0")) return null; // reject NUL-byte paths
 
-  // Resolve under ROOT and confine: any `..` that would climb above ROOT → 404.
+  // Resolve under ROOT, then confine with `path.relative` (the is-path-inside
+  // idiom): anything climbing out of ROOT yields a `..`-prefixed or absolute
+  // relative path → 404. Also rejects a sibling dir that merely shares ROOT's
+  // prefix, which a plain `startsWith(ROOT)` check would wrongly admit.
   const abs = resolve(ROOT, `.${decoded.startsWith("/") ? decoded : `/${decoded}`}`);
-  if (abs !== ROOT && !abs.startsWith(ROOT + sep)) return null;
+  const rel = relative(ROOT, abs);
+  if (rel.startsWith("..") || isAbsolute(rel)) return null;
 
   // 1. exact file (legacy `.html`, hashed assets, rss.xml, CNAME, …)
   if (!decoded.endsWith("/") && isFile(abs)) return abs;
