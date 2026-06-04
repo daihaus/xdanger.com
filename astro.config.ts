@@ -33,22 +33,33 @@ import rehypeUnwrapImages from "rehype-unwrap-images";
 // Then open e.g. https://100-77-4-5.anyip.dev:4321 (your Tailscale IP, dashed).
 const anyipCert = "./.cert/anyip/fullchain.pem";
 const anyipKey = "./.cert/anyip/privkey.pem";
-const devHttps =
-  fs.existsSync(anyipCert) && fs.existsSync(anyipKey)
-    ? { cert: fs.readFileSync(anyipCert), key: fs.readFileSync(anyipKey) }
-    : undefined;
+// Guarded: this also runs during `pnpm build`, so a corrupt/unreadable cert
+// must never abort the build — fall back to plain HTTP dev instead.
+const devHttps = (() => {
+  try {
+    if (fs.existsSync(anyipCert) && fs.existsSync(anyipKey)) {
+      return { cert: fs.readFileSync(anyipCert), key: fs.readFileSync(anyipKey) };
+    }
+  } catch {
+    // fall through to undefined
+  }
+  return undefined;
+})();
 
 // https://astro.build/config
 export default defineConfig({
   // adapter: vercel(),
-  // Dev/preview server — listen on all interfaces so it's reachable over
-  // Tailscale (MagicDNS host `*.hound-manta.ts.net`) for remote debugging.
-  // The leading dot in `allowedHosts` whitelists every machine in the tailnet.
-  server: {
-    host: true,
-    port: 4321,
-    allowedHosts: [".hound-manta.ts.net", ".anyip.dev"],
-  },
+  // Dev server. Only bind to all interfaces when the anyip cert is present
+  // (i.e. you've opted into HTTPS remote debugging over Tailscale). Without the
+  // cert, fall back to Astro's localhost-only default so a plain `pnpm dev` is
+  // never exposed to the LAN.
+  //
+  // No `allowedHosts` here: Vite skips its host-header allowlist entirely when
+  // the dev server runs over HTTPS (https://vite.dev/config/server-options),
+  // so it can't guard this path. DNS-rebinding is instead limited by Vite's
+  // default CORS policy (only localhost origins may read responses) plus
+  // keeping this all-interfaces bind gated behind the HTTPS opt-in above.
+  server: devHttps ? { host: true, port: 4321 } : undefined,
   build: {
     // https://docs.astro.build/zh-cn/reference/configuration-reference/#buildformat
     format: "preserve",

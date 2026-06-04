@@ -54,8 +54,8 @@ pnpm cert:anyip
 Then run `pnpm dev` and open `https://<dashed-ip>.anyip.dev:4321`, where `<dashed-ip>` is this
 machine's Tailscale IP with dots written as dashes — look it up with `tailscale ip -4` (e.g.
 `100.77.4.5` → `100-77-4-5`). HMR works over the same port with no extra config. The mechanism
-(anyip resolves the embedded IP back, plus a public-key Let's Encrypt wildcard for `*.anyip.dev`)
-is documented in the note atop `astro.config.ts`.
+(anyip resolves the embedded IP back, plus a Let's Encrypt wildcard cert for `*.anyip.dev` whose
+private key is intentionally public) is documented in the note atop `astro.config.ts`.
 
 ### File-level checks
 
