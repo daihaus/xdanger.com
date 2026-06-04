@@ -33,7 +33,7 @@ pnpm build:site     # Astro-only build for faster local rebuild checks
 pnpm build:debug    # Astro build with NODE_OPTIONS=--trace-warnings
 pnpm run rebuild        # Astro-only rebuild; reuse cached OG image PNG and fill missing ones
 pnpm run rebuild:og     # force-refresh all OG image PNG in the local cache
-pnpm preview        # preview production build
+pnpm preview        # serve dist/ via a plain static server (serve, cleanUrls:false) — 1:1 with prod URLs; do NOT use `astro preview` for URL checks
 pnpm lint           # autocorrect + prettier --check + eslint + astro check
 pnpm fix            # autocorrect + prettier --write + eslint --fix
 ```
@@ -78,16 +78,22 @@ eslint.config.js      # ESLint flat config
 
 ## URL formats
 
-The site preserves three URL conventions for backward compatibility — see `README.md`'s
-"URL 规则" section. Treat `src/utils/url.ts` (`getPostPath`, `getCanonicalUrl`) as the source of
-truth when adding new content.
+The site uses **clean URLs by default, with the frozen legacy posts as the exception** — see
+`README.md`'s "URL 规则" section. Treat `src/utils/url.ts` (`getPostPath`, `getPostRouteSlug`,
+`getCanonicalUrl`, `getNotePath`) as the single source of truth when adding content.
 
 1. **MoveableType era** (publish date < `2013-05-31`): `/YYYY/MM/DD/SEQ.html`
 2. **Jekyll era** (`2013-05-31` ≤ date < `2025-02-28`): `/YYYY/MM/DD/title.html`
-3. **Astro era** (date ≥ `2025-02-28`): `/YYYY/MMDD-title` (no `.html`)
+3. **Astro era** (date ≥ `2025-02-28`): `/title-YYYYMMDD` (clean, no `.html`); slug comes from the
+   filename after `MMDD-`, date from the `YYYY`+`MMDD` prefix. The briefly-used `/YYYY/MMDD-title`
+   form 301-redirects here via `astro.config.ts`'s `redirects`.
+4. **Notes**: file `_notes/<slug>-<YYYYMMDD>.md` → URL `/notes/<slug>-<YYYYMMDD>`.
 
-`vercel.json` has `cleanUrls: true`, so the new era posts serve from `.html` files but are
-accessed without the suffix.
+Mechanism: `build.format: "directory"` outputs every page as `<path>/index.html` (clean URLs); the
+`legacyHtmlFlattener` integration (`astro:build:done` in `astro.config.ts`) then flattens the
+historical posts (①②) back to flat `<path>.html` files. The whole URL contract lives in the static
+output, so every static host (Vercel / GitHub Pages) behaves identically and is portable.
+`vercel.json` only sets `cleanUrls: false` — no host-level routing rules.
 
 ## Commit style
 
@@ -114,8 +120,8 @@ auto-detects pnpm from the lockfile) and deploys to GitHub Pages. Vercel is conf
 
 - Don't touch linter/formatter configs without explicit approval.
 - Don't reintroduce `bun`, `biomejs`, or `deno` tooling — they were intentionally removed.
-- Don't bypass `cleanUrls` or hard-code `.html` in new internal links — use the helpers in
-  `src/utils/url.ts`.
+- Don't reintroduce `cleanUrls` or hard-code `.html`/era-specific paths in internal links — use
+  the helpers in `src/utils/url.ts`.
 - Don't commit `dist/`, `.astro/`, or `.vercel/` artifacts.
 
 ## Notes on Chinese typography

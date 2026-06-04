@@ -36,7 +36,7 @@ pnpm install
 | `pnpm build:debug`  | 带 `NODE_OPTIONS=--trace-warnings` 运行 Astro 构建            |
 | `pnpm run rebuild`    | 只重新执行 Astro 构建，复用已有 OG image PNG，只补缺失图片 |
 | `pnpm run rebuild:og` | 强制刷新全部 OG image PNG，并写回本地缓存                  |
-| `pnpm preview`      | 预览构建后的网站                                             |
+| `pnpm preview`      | 用纯静态服务器（`serve`，`cleanUrls:false`）伺服 `dist/`，1:1 复现线上 URL 行为 |
 | `pnpm lint`         | 运行 autocorrect / prettier / eslint / astro check 全套检查 |
 | `pnpm fix`          | 自动修复格式与可修复的 lint 问题                             |
 
@@ -53,12 +53,13 @@ pnpm install
 
 ### URL 规则
 
-本项目保留三种 URL 形态以兼容历史链接；新增内容时以 `src/utils/url.ts`（`getPostPath` / `getCanonicalUrl`）为准：
+本项目以「干净 URL 为默认、冻结的历史文章为例外」组织所有地址；新增内容时以
+`src/utils/url.ts`（`getPostPath` / `getPostRouteSlug` / `getCanonicalUrl` / `getNotePath`，单一事实来源）为准：
 
 1. MoveableType 时期的文章（发布日期 < `2013-05-31`）：
 
    - 文件路径：`_posts/YYYY/MM/DD/SEQ.mdx`
-   - URL 形态：`/YYYY/MM/DD/SEQ.html`
+   - URL 形态：`/YYYY/MM/DD/SEQ.html`（与原博客完全一致）
 
 2. Jekyll 时期的文章（`2013-05-31` <= 发布日期 < `2025-02-28`）：
 
@@ -68,9 +69,20 @@ pnpm install
 3. Astro 时期的文章（`2025-02-28` <= 发布日期）：
 
    - 文件路径：`_posts/YYYY/MMDD-title.mdx`
-   - URL 形态：`/YYYY/MMDD-title`（更简洁的新格式）
+   - URL 形态：`/title-YYYYMMDD`（干净 URL，slug 取自文件名 `MMDD-` 之后那段，日期取自 `YYYY`+`MMDD`）
+   - 历史上短暂使用过的 `/YYYY/MMDD-title` 形态，由 `astro.config.ts` 的 `redirects` 301 跳到此形态
 
-`getPostPath` 为所有文章统一生成带 `.html` 的内链，Vercel 的 `cleanUrls` 会在访问时去除后缀，因此带与不带 `.html` 的地址均可访问。
+4. 笔记（notes）：
+
+   - 文件路径：`_notes/<slug>-<YYYYMMDD>.md`
+   - URL 形态：`/notes/<slug>-<YYYYMMDD>`（干净 URL）
+
+实现机制：`build.format: "directory"` 让每个页面默认输出为 `<path>/index.html`（干净 URL）；
+历史文章（①②）在 `astro:build:done` 钩子（`astro.config.ts` 的 `legacyHtmlFlattener`）里被还原成
+扁平 `<path>.html` 文件，以原样伺服历史 `.html` 链接。整套 URL 契约都写在静态产物里，因此
+任意静态 host（Vercel / GitHub Pages）行为一致、可移植。本地 `pnpm preview`
+（纯静态 `serve`，配置见根目录 `serve.json`）伺服 `dist/`，即可 1:1 复现线上的链接 / 跳转 / 404。
+注意不要用 `astro preview`（带路由魔法：对重定向发 3xx、对历史无后缀做 `.html` 回退），不反映线上。
 
 ### 工具链
 
@@ -90,8 +102,8 @@ pnpm install
 
 ### 部署
 
-- **Vercel**（主站）：通过 `vercel.json` 配置，启用 `cleanUrls`。
-- **GitHub Pages**（备份）：通过 `.github/workflows/deploy.yml` 在 `main` 推送后自动构建并发布。
+- **Vercel**（主站）：`vercel.json` 仅设 `cleanUrls: false`；URL 规则全部由静态产物自身承载，不依赖任何平台路由配置。
+- **GitHub Pages**（备份）：通过 `.github/workflows/deploy.yml` 在 `main` 推送后自动构建并发布，行为与 Vercel 一致。
 
 ## TODO
 
