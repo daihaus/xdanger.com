@@ -95,12 +95,16 @@ function writeToCache(data: WebmentionsCache) {
   });
 }
 
-// 最小结构校验：lastFetched 为 string|null、children 为数组，才视为可用缓存。
+// 最小结构校验：lastFetched 为 string|null、children 为含 wm-id 的对象数组，才视为可用缓存。
+// 校验到下游真正用到的 `wm-id`，避免 `children: [null]` 之类在 mergeWebmentions 里抛 TypeError。
 function isWebmentionsCache(value: unknown): value is WebmentionsCache {
   if (typeof value !== "object" || value === null) return false;
   const cache = value as Record<string, unknown>;
   const lastFetchedOk = cache.lastFetched === null || typeof cache.lastFetched === "string";
-  return lastFetchedOk && Array.isArray(cache.children);
+  if (!lastFetchedOk || !Array.isArray(cache.children)) return false;
+  return cache.children.every(
+    (c) => typeof c === "object" && c !== null && typeof (c as Record<string, unknown>)["wm-id"] === "number",
+  );
 }
 
 function getFromCache(): WebmentionsCache {
