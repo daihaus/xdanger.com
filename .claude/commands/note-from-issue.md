@@ -18,6 +18,9 @@ argument-hint: "(无参数；配合 /loop 5m /note-from-issue 使用)"
 - **比 issue 更全**：issue 内容可能已经不错，但仍要自己检索、交叉核实、整理出更完整准确的信息；
   issue 是起点，不是上限。检索取证用工具（web search 等），别轻信单一来源。
 - **结构与叙事**：自己构思更好的切入角度、文章结构与叙事节奏，而不是照搬 issue 的组织方式。
+- **善用可视化**：凡是图示 / 交互能比文字讲得更清的概念，尽量做成可视化组件来加深读者理解——按需
+  选 SVG / Canvas / React 三层（见下方 design system 与 AGENTS.md，可复用现有范例）；服务内容、不为
+  炫技，够用就停在最轻的层。
 - **写作风格**：遵循 Scott Adams《The Day You Became a Better Writer》（本站 note
   `/notes/the-day-you-became-a-better-writer-20070616`）——**简单即说服力**：删冗词、写短句、
   主谓宾语序、第一句就抓住读者；够清楚就停笔。
