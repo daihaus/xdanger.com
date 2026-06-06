@@ -118,7 +118,7 @@ const bars = [22, 30, 38, 47, 57, 68, 80, 93].map((h, i) => ({
 ---
 
 <PageLayout meta={meta}>
-  <div class="ds">
+  <div class="ds page-shell">
     <!-- ===== Intro ===== -->
     <section class="ds-intro">
       <p class="ds-eyebrow">color · type · space · motion</p>
@@ -553,10 +553,12 @@ const bars = [22, 30, 38, 47, 57, 68, 80, 93].map((h, i) => ({
 </PageLayout>
 
 <style>
+  /* Width + horizontal padding come from the site-wide `page-shell` utility
+     (max-w-3xl · px-4 sm:px-6), so the design-system page lines up with the
+     home / posts / notes columns. Only the page's own bottom padding is scoped
+     here — keeping `max-width`/`padding-inline` out of this unlayered rule so it
+     can't override the utility. */
   .ds {
-    max-width: 72rem;
-    margin-inline: auto;
-    padding-inline: var(--space-4);
     padding-bottom: var(--space-10);
   }
 
