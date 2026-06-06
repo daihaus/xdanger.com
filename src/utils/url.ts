@@ -71,8 +71,11 @@ export function getCanonicalUrl(post: CollectionEntry<"post">): string {
   return new URL(getPostPath(post), import.meta.env.SITE).href;
 }
 
-/** 笔记命名约定：按年分目录、日期前缀 `YYYY/MMDD-slug`（slug 不含 `/`，与文章 Astro 期同构） */
-const ASTRO_NOTE_RE = /^(\d{4})\/(\d{4})-([^/]+)$/;
+/**
+ * 笔记命名约定：按年分目录、日期前缀 `YYYY/MMDD-slug`（slug 不含 `/`，与文章 Astro 期同构）。
+ * MM 限定 `01–12`、DD 限定 `01–31`，挡掉 `1399` 这类非法日期（避免静默产出错误 URL）。
+ */
+const ASTRO_NOTE_RE = /^(\d{4})\/((?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01]))-([^/]+)$/;
 
 /**
  * 笔记 slug（路由 slug 与对外 URL 共用，无前导 `/`、时区无关）。
