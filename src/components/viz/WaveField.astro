@@ -1,0 +1,177 @@
+---
+/**
+ * WaveField — 第 2 层「Canvas + JS」示范件。
+ *
+ * 何时用这一层：大量点 / 连续曲线 / 需要逐帧重算（波形、粒子、实时模拟），
+ * 性能优先、SVG 节点数会爆炸的场景。
+ *
+ * 主题契约（Canvas 不能像 SVG 那样靠 CSS 自动变色，必须手动取色 + 监听）：
+ *  - 用 `getComputedStyle(document.documentElement).getPropertyValue('--color-*')` 取色；
+ *    只读两主题下都是**字面 oklch** 的 token（本件用 `--color-accent` 与 `--color-link`），
+ *    避免 `--color-foreground` 在 light 下是 `var(--foreground)` 链式引用、`getComputedStyle`
+ *    可能返回未解析值的坑。Canvas 现代浏览器原生接受 oklch() 字符串。
+ *  - 用 `MutationObserver` 监听 `<html>` 的 `data-theme` 属性变化重新取色重画 —— 比监听
+ *    `theme-change` 事件更稳：它能覆盖初次加载、系统偏好切换等所有路径。
+ *  - `devicePixelRatio` 适配，避免高分屏发虚。
+ *  - 尊重 `prefers-reduced-motion: reduce`：只画一帧静态，不起 rAF 循环。
+ *  - 离屏用 `IntersectionObserver` 暂停动画省 CPU；`<canvas>` 内放 fallback 文本。
+ *
+ * 多实例：用 custom element（同 `ThemeToggle.astro`），每个 `<wave-field>` 各自 init，
+ * `disconnectedCallback` 里清理 rAF 与所有 observer / listener。
+ */
+interface Props {
+  /** Canvas 高度（CSS px）；宽度自适应容器。默认 160。 */
+  height?: number;
+  /** Canvas 无障碍替代文本（同时作为不支持时的 fallback）。 */
+  label?: string;
+  caption?: string;
+}
+
+const { height = 160, label = "随主题变色的叠加波形动画", caption } = Astro.props;
+---
+
+<figure class="not-prose my-8 flex flex-col items-center gap-3">
+  <wave-field class="w-full">
+    <canvas aria-label={label} class="block h-full w-full" role="img" style={`height:${height}px`}
+      >{label}</canvas
+    >
+  </wave-field>
+  {caption && <figcaption class="text-foreground text-sm opacity-70">{caption}</figcaption>}
+</figure>
+
+<script>
+  class WaveField extends HTMLElement {
+    private canvas!: HTMLCanvasElement;
+    private ctx!: CanvasRenderingContext2D;
+    private raf = 0;
+    private phase = 0;
+    private colors = ["oklch(55.27% 0.195 19.06)", "oklch(70.44% 0.1133 349)"];
+    private visible = true;
+    private themeObserver?: MutationObserver;
+    private resizeObserver?: ResizeObserver;
+    private intersectionObserver?: IntersectionObserver;
+    private motionMql?: MediaQueryList;
+
+    connectedCallback() {
+      const canvas = this.querySelector("canvas");
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx) return;
+      this.canvas = canvas;
+      this.ctx = ctx;
+
+      this.readColors();
+      this.resize();
+
+      // 主题切换 → 重新取色 + 重画（reduced-motion 下只重画一帧静态）。
+      this.themeObserver = new MutationObserver(() => {
+        this.readColors();
+        // 动画循环在跑时会自然重画；否则（离屏暂停 / reduced-motion）这里立即补一帧，
+        // 保证「主题变化即重新取色重画」的契约对暂停中的实例也成立。
+        if (!this.visible || this.prefersReducedMotion()) this.drawStatic();
+      });
+      this.themeObserver.observe(document.documentElement, {
+        attributeFilter: ["data-theme"],
+        attributes: true,
+      });
+
+      // 容器宽度变化 → 重新按 DPR 设尺寸 + 重画。
+      this.resizeObserver = new ResizeObserver(() => {
+        this.resize();
+        if (this.prefersReducedMotion()) this.drawStatic();
+      });
+      this.resizeObserver.observe(this.canvas);
+
+      // 离屏暂停动画。
+      this.intersectionObserver = new IntersectionObserver((entries) => {
+        this.visible = entries[0]?.isIntersecting ?? true;
+        this.syncPlayback();
+      });
+      this.intersectionObserver.observe(this.canvas);
+
+      // reduced-motion 偏好实时变化。
+      this.motionMql = window.matchMedia("(prefers-reduced-motion: reduce)");
+      this.motionMql.addEventListener("change", this.syncPlayback);
+
+      this.syncPlayback();
+    }
+
+    disconnectedCallback() {
+      cancelAnimationFrame(this.raf);
+      this.themeObserver?.disconnect();
+      this.resizeObserver?.disconnect();
+      this.intersectionObserver?.disconnect();
+      this.motionMql?.removeEventListener("change", this.syncPlayback);
+    }
+
+    private prefersReducedMotion() {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+
+    private readColors() {
+      const root = getComputedStyle(document.documentElement);
+      const accent = root.getPropertyValue("--color-accent").trim();
+      const link = root.getPropertyValue("--color-link").trim();
+      this.colors = [accent || this.colors[0], link || this.colors[1]];
+    }
+
+    private resize() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = this.canvas.clientWidth;
+      const h = this.canvas.clientHeight;
+      this.canvas.width = Math.max(1, Math.round(w * dpr));
+      this.canvas.height = Math.max(1, Math.round(h * dpr));
+      // 之后用 CSS px 坐标作画，由 transform 统一缩放到设备像素。
+      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    // 播放状态机：可见且允许动效才跑 rAF；否则停在一帧静态。
+    private syncPlayback = () => {
+      cancelAnimationFrame(this.raf);
+      if (this.visible && !this.prefersReducedMotion()) {
+        const loop = () => {
+          this.phase += 0.02;
+          this.draw();
+          this.raf = requestAnimationFrame(loop);
+        };
+        this.raf = requestAnimationFrame(loop);
+      } else {
+        this.drawStatic();
+      }
+    };
+
+    private drawStatic() {
+      this.draw();
+    }
+
+    private draw() {
+      const ctx = this.ctx;
+      const w = this.canvas.clientWidth;
+      const h = this.canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+      const mid = h / 2;
+      const waves = [
+        { amp: h * 0.28, freq: 1.4, speed: 1, color: this.colors[0], alpha: 0.9, width: 2 },
+        { amp: h * 0.18, freq: 2.3, speed: -1.6, color: this.colors[1], alpha: 0.7, width: 1.5 },
+      ];
+      for (const wave of waves) {
+        ctx.beginPath();
+        for (let x = 0; x <= w; x += 2) {
+          const y =
+            mid + Math.sin((x / w) * Math.PI * 2 * wave.freq + this.phase * wave.speed) * wave.amp;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.globalAlpha = wave.alpha;
+        ctx.strokeStyle = wave.color;
+        ctx.lineWidth = wave.width;
+        ctx.lineJoin = "round";
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  if (!customElements.get("wave-field")) {
+    customElements.define("wave-field", WaveField);
+  }
+</script>

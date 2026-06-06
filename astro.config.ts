@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import mdx from "@astrojs/mdx";
+import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import expressiveCode from "astro-expressive-code";
@@ -81,7 +82,7 @@ export default defineConfig({
       filter: (page) => {
         const path = new URL(page).pathname.replace(/\/$/, "");
         if (/^\/\d{4}\/\d{4}-[^/]+$/.test(path)) return false;
-        if (path === "/notes/welcome") return false;
+        if (path === "/notes/welcome" || path === "/notes/welcome-20250514") return false;
         return true;
       },
       // 历史文章在 sitemap 中输出为 `.html`，与钩子还原后的实际文件保持一致
@@ -95,6 +96,8 @@ export default defineConfig({
         return item;
       },
     }),
+    // react() must precede mdx() so MDX files can render React islands (.tsx).
+    react(),
     mdx(),
     robotsTxt(),
     webmanifest({
@@ -181,8 +184,9 @@ export default defineConfig({
       "/multiplanet-civilization-v-earth-gravity-20250315",
     "/2025/0504-berkshire-hathaway": "/berkshire-hathaway-20250504",
     "/2025/0504-berkshire-hathaway.html": "/berkshire-hathaway-20250504",
-    // 旧笔记 URL → 新 `<slug>-<YYYYMMDD>` 形态
-    "/notes/welcome": "/notes/welcome-20250514",
+    // 旧 welcome note 已删除：两个历史 URL 一并收敛到 notes 列表页，避免老链接 404。
+    "/notes/welcome": "/notes",
+    "/notes/welcome-20250514": "/notes",
   },
   // https://docs.astro.build/en/guides/prefetch/
   prefetch: true,
