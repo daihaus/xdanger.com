@@ -641,7 +641,22 @@ a.not-prose {
   }
 }
 
-@utility prose {
+/* All prose styling lives here as an *unlayered* `.prose` rule, on purpose. The
+ * `@tailwindcss/typography` plugin emits its own `.prose` defaults (gray-700 body
+ * color, `code` with a 1px border + 600 weight + backtick `::before/::after`,
+ * italic blockquotes with curly quote marks) into the `utilities` layer. An
+ * unlayered rule outranks *any* layered rule at equal specificity, so these
+ * overrides win robustly — no `.prose.prose` specificity bump, no `@utility`.
+ *
+ * Why not `@utility prose`: Tailwind sorts the `prose` utility within the
+ * utilities layer by how much it declares. Once the block grew (the blockquote
+ * styles below tipped it over), `@utility prose` sorted *ahead* of the plugin's
+ * `.prose`, so the plugin's later-emitted defaults won at equal specificity —
+ * dark body text went invisible (plugin gray-700 on near-black) and inline code
+ * got the bordered/bold/backtick treatment. Unlayering sidesteps the sort race
+ * entirely. Headings also carry an explicit `prose-headings:text-accent-2`
+ * utility (see PROSE_ARTICLE), which is why they were never affected. */
+.prose {
   --tw-prose-body: var(--color-foreground);
   --tw-prose-bold: var(--color-foreground);
   --tw-prose-bullets: var(--color-foreground);
@@ -662,9 +677,6 @@ a.not-prose {
     font-family: var(--font-mono);
   }
 
-  /* Inline code matches the chrome `xdanger` chip: faint neutral bg, rounded, no
-   * border, no backtick quotes, normal weight — overriding Typography's bordered
-   * `code` + `::before/::after: "`"`. Code blocks (`pre code`) keep expressive-code. */
   :where(code):not(:where(pre code, [class~="not-prose"], [class~="not-prose"] *)) {
     border: none;
     border-radius: 0.25rem;
