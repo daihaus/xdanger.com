@@ -147,6 +147,10 @@ const { height = 160, label = "随主题变色的叠加波形动画", caption } 
       const ctx = this.ctx;
       const w = this.canvas.clientWidth;
       const h = this.canvas.clientHeight;
+      // 尺寸未就绪（初次连接 / 被隐藏容器包裹）时 w 或 h 为 0：相位 `x / w` 会算出
+      // `0 / 0 → NaN`，moveTo/lineTo(NaN) 让绘制静默失效。提前返回，待 ResizeObserver
+      // / IntersectionObserver 在尺寸就绪后再触发一次重画（rAF 循环每帧也会自然重试）。
+      if (w <= 0 || h <= 0) return;
       ctx.clearRect(0, 0, w, h);
       const mid = h / 2;
       const waves = [
