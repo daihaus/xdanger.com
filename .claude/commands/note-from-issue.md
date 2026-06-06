@@ -130,4 +130,6 @@ lark-cli im +messages-send --as bot --user-id ou_b196a9da09c0f5dce927256299ebdba
 建好 4 个 label（`note-taking` / `note-in-progress` / `note-published` / `note-blocked`）；确认
 `gh auth status`（repo/PR/issue 写权限）、`lark-cli auth status`（bot ready）、`codex --version`
 均就绪；`.note-intake/` 已 gitignore（本仓库已配置）；在专用 worktree 跑 `/loop 5m /note-from-issue`。
+本命令不再固定 `allowed-tools` 白名单，故无人值守须以 Claude 的 **`auto` 权限模式**运行（工具
+自动批准）；否则首条未授权的 `gh`/`git`/`pnpm` 会弹权限提示、把循环卡死。
 运行期间它**不会问你任何问题**——结果走 lark 通知，卡住的 issue 停在 `note-blocked` 等你接手。
