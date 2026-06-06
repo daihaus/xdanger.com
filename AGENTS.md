@@ -127,9 +127,13 @@ issue→note automation (`/note-from-issue`) generates notes against these same 
 - **SVG** — stroke/fill with `currentColor` + `var(--color-*)` → recolors with zero JS.
 - **Canvas** — colors don't auto-update; read them with
   `getComputedStyle(document.documentElement).getPropertyValue('--color-…')`. Only read tokens
-  that are **literal oklch in both themes** (`--color-accent`, `--color-accent-2`,
-  `--color-link`, `--color-quote`); `--color-foreground`/`--color-background` are `var()` chains
-  in light mode and may come back unresolved. React to theme switches with a `MutationObserver`
+  that are **literal oklch in both themes** — `--color-accent`, `--color-accent-2`,
+  `--color-link`, `--color-quote`, plus the categorical `--color-cat-1…6` and sequential
+  `--color-seq-{accent,steel,neutral}-1…6` ramps (all written literally in both the light and
+  dark blocks, so they survive `getComputedStyle`). Note the categorical hues are **stable**
+  across themes (a series keeps its identity) while `--color-accent` **flips hue** (carmine →
+  jade); `--color-foreground`/`--color-background` are `var()` chains in light mode and may come
+  back unresolved. React to theme switches with a `MutationObserver`
   on `<html>`'s `data-theme` attribute (more robust than the `theme-change` event, which only
   fires on toggle click — it misses initial load and OS-preference changes). Scale for
   `devicePixelRatio`.

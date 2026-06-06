@@ -1,6 +1,6 @@
 ---
-title: 给 notes 加交互：三层组件约定
-description: 这篇 note 同时是一份活风格指南——演示 SVG、Canvas、React 三层交互组件，以及它们如何随主题变色、尊重 reduced-motion。
+title: 给 notes 加交互：三层组件 × design system
+description: 这篇 note 同时是一份活风格指南——SVG / Canvas / React 三层交互组件共用同一套 design system token，随主题变色、尊重 reduced-motion。
 publishDate: "2026-06-05T12:00:00+08:00"
 ---
 
@@ -8,30 +8,43 @@ import OrbitDiagram from "@/components/viz/OrbitDiagram.astro";
 import WaveField from "@/components/viz/WaveField.astro";
 import CompoundInterest from "@/components/interactive/CompoundInterest.tsx";
 
-从这篇起，notes 不再只是纯文字。站点按「表现复杂度」分三层来承载交互，**够用就停在最轻的一层**——越往下，JS 成本越高。三层都遵守同一套主题契约：跟着 `data-theme` 变色、尊重 `prefers-reduced-motion`、带无障碍标注。
+notes 不再只是纯文字。站点按「表现复杂度」分三层承载交互，**够用就停在最轻的一层**——越往下 JS 成本越高。三层吃的是同一套设计 token：颜色、间距、圆角、动效都是 CSS 变量，完整目录在 [`/design-system`](/design-system)。它们也共享同一套主题契约：跟着 `data-theme` 变色、尊重 `prefers-reduced-motion`、带无障碍标注。
+
+## 先认色：一套 token，几种角色
+
+切主题时每种 token 各有脾气，用错角色就会在某套主题下失真：
+
+- **中性**（`--color-surface*` / `--color-ink*`）——纸与墨，撑背景和文字。
+- **accent**（`--color-accent`）——唯一的主角色，且**跨主题换相**：浅色胭红、深色玉绿（即 Ember · Jade）。承载主操作、链接、单序列标记、焦点。
+- **分类色**（`--color-cat-1…6`）——多序列各占一槽，**跨主题稳定**：换主题只调明度、不换相，所以一条线在明暗两套里都认得出是「它」。浅色下 `cat-1` 与 accent 同相、几乎重合。
+- **sequential 阶梯**（`--color-seq-accent|steel|neutral-1…6`）——表达量级 / 浓淡的单色梯。
+- **语义 / 基础设施**——盈亏用 `--color-positive` / `--color-negative`，网格轴线用 `--color-grid` / `--color-axis`。
+
+一句话选色：单序列或 UI 用 **accent**，多序列用**分类色**（要的是稳定身份），量级用 **sequential**。全部是字面 `oklch`、明暗两套各写一份——所以 SVG 能用 `var()` 直接吃，Canvas 也能用 `getComputedStyle` 读到。
 
 ## 第 1 层 · animated-SVG（零 JS）
 
-几何、坐标、元素有限的图——首选这一层。矢量缩放无损，颜色用 `currentColor` 与 `var(--color-accent)` 等语义 token，所以**切换明暗主题时零 JS 自动变色**；动画用纯 CSS，在系统「减少动态效果」时自动静止。试试右上角切主题，下图的轨道与圆点会跟着换色：
+几何、坐标、元素有限的图——首选这层。矢量无损缩放，颜色用 `currentColor` 与 `var(--color-*)`，**切明暗零 JS 自动变色**；动画用纯 CSS，在系统「减少动态效果」时自动静止。多序列折线只要给每条线 `stroke="var(--color-cat-N)"`，分类色跨主题稳定、系列身份不丢（`/design-system` 的 In context 有五序列示范）。试试右上角切主题，下图轨道与圆点会跟着换色：
 
 <OrbitDiagram caption="三条同心轨道绕中心匀速自转——纯 CSS 动画，切主题零 JS 变色。" />
 
 ## 第 2 层 · Canvas + JS
 
-大量点、连续曲线、需要逐帧重算的图（波形、粒子、实时模拟）——SVG 节点会爆炸，改用 Canvas。代价是 Canvas 不会自动变色：得用 `getComputedStyle` 取 CSS 变量、用 `MutationObserver` 监听 `data-theme` 重新取色重画，并做 `devicePixelRatio` 适配。下图是两条叠加正弦波，切主题时会重新取色：
+大量点、连续曲线、需要逐帧重算的图（波形、粒子、实时模拟）——SVG 节点会爆炸，改用 Canvas。代价是 Canvas 不自动变色：得用 `getComputedStyle` 取 CSS 变量、用 `MutationObserver` 监听 `data-theme` 重新取色重画，并做 `devicePixelRatio` 适配。**取色只读「两套主题都是字面 oklch」的 token**——这恰好覆盖整套调色板：accent、分类色 `cat-*`、sequential 阶梯都行；别读 `--color-foreground` / `--color-background`，它们在浅色下是 `var()` 链，`getComputedStyle` 可能返回未解析值。下图两条波分别取 accent 与 `cat-5`（steel）——切主题时 accent 波翻红↔绿、steel 波守住钢蓝（只随主题调明度），正是「主角换相、分类色稳定」，而两者都在切换瞬间被重新读色重画：
 
-<WaveField caption="两条叠加正弦波逐帧重算；离屏自动暂停、reduced-motion 下只画一帧静态。" />
+<WaveField caption="accent 波随主题翻红↔绿、steel 波守住钢蓝；逐帧重算，离屏自动暂停、reduced-motion 下只画一帧静态。" />
 
 ## 第 3 层 · React 19 island
 
-多个输入互相联动、状态驱动的实时重算、需要图表库或较深组件树——才升到 React。它在 MDX 里以 `client:visible` 注水，进入视口才加载 JS。下面这个复利小工具拖动任一滑块，数值与增长条会实时联动（刻意不引图表库，纯 state + 内联条形）：
+多个输入互相联动、状态驱动的实时重算、需要图表库或较深组件树——才升到 React。它在 MDX 里以 `client:visible` 注水，进入视口才加载 JS。配色一律用随 `dark:` 翻转的 Tailwind 工具类（`text-accent` / `bg-accent` / `border-foreground/…`），无需手动取色；过渡用 `motion-safe:` 变体。下面这个复利小工具拖动任一滑块，数值与增长条会实时联动（刻意不引图表库，纯 state + 内联条形）：
 
 <CompoundInterest client:visible />
 
 ## 怎么选
 
-- 能用 **SVG** 就别用 Canvas：零运行时、自动变色、可访问性最好。
-- 点数多到 SVG 卡，或要逐帧动画 → **Canvas**，但得自己接主题与 DPR。
-- 真要状态联动 / 图表库 / 深组件树 → **React**，默认 `client:visible`。
+先挑层，再挑色：
 
-三层的完整约定（目录、主题联动规则、`client:*` 默认、a11y、import 路径）写在仓库 `AGENTS.md` 的「交互组件分层约定」一节，也是自动化生成 note 时遵循的规范。
+- **层**：能用 **SVG** 就别上 Canvas（零运行时、自动变色、可访问性最好）；点多到 SVG 卡、或要逐帧动画 → **Canvas**（自己接主题与 DPR）；真要状态联动 / 图表库 / 深组件树 → **React**（默认 `client:visible`）。
+- **色**：单序列 / UI → **accent**；多序列 → **分类色**（身份稳定）；量级 → **sequential**；盈亏 → **positive / negative**。
+
+三层的完整约定（目录、主题联动、`client:*` 默认、a11y、import 路径）写在仓库 `AGENTS.md` 的「Interactive component layers」一节，对照色板见 [`/design-system`](/design-system)；这也是自动化生成 note 时遵循的规范。
