@@ -97,7 +97,12 @@ export async function GET(context: APIContext) {
     return imageResponse(cachedPng);
   }
 
-  const svg = await satori(markup(title, postDate), ogOptions);
+  // satori-html 返回它自有的 VNode 形态；接入 React 后装入了 `@types/react`，satori
+  // 的入参类型解析为真实的 `ReactNode`，故在类型层显式桥接到 satori 实际接受的类型。
+  const svg = await satori(
+    markup(title, postDate) as unknown as Parameters<typeof satori>[0],
+    ogOptions,
+  );
   const png = new Uint8Array(new Resvg(svg).render().asPng());
   await writeCachedPng(cacheFile, png);
 

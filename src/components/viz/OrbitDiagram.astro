@@ -1,0 +1,93 @@
+---
+/**
+ * OrbitDiagram — 第 1 层「animated-SVG」示范件（零 JS）。
+ *
+ * 何时用这一层：几何 / 坐标类、元素有限的图。矢量缩放无损，颜色用 `currentColor`
+ * 与 `var(--color-*)` 语义 token，因此切换 `data-theme` 时**零 JS 自动变色**；动画
+ * 用纯 CSS 并在 `prefers-reduced-motion: reduce` 时自动静止。
+ *
+ * 主题契约：stroke/fill 只引用随 `[data-theme="dark"]` 翻转的 token
+ * （`currentColor` 继承自 `--color-foreground`，圆点用 `--color-accent`），
+ * 不碰 `--chart-*` 等仅在 `.dark` class 下生效的休眠变量。
+ */
+interface Props {
+  /** SVG 边长（px），等比缩放；默认 220。 */
+  size?: number;
+  /** 无障碍标题（`<title>`），读屏会朗读。 */
+  title?: string;
+  /** 无障碍描述（`<desc>`）。 */
+  desc?: string;
+  /** 图注；省略则不渲染 `<figcaption>`。 */
+  caption?: string;
+}
+
+const {
+  size = 220,
+  title = "三层轨道示意",
+  desc = "围绕中心节点旋转的三条同心轨道，演示零 JS 随主题变色的矢量动画。",
+  caption,
+} = Astro.props;
+
+// 构建期生成 per-instance id：同页放多个 <OrbitDiagram> 时避免 id 撞车、
+// 以及 aria-labelledby 错指到第一个实例的 title/desc。
+const uid = crypto.randomUUID();
+---
+
+<figure class="not-prose text-foreground my-8 flex flex-col items-center gap-3">
+  <svg
+    aria-labelledby={`${uid}-title ${uid}-desc`}
+    class="orbit h-auto max-w-full"
+    height={size}
+    role="img"
+    viewBox="0 0 220 220"
+    width={size}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <title id={`${uid}-title`}>{title}</title>
+    <desc id={`${uid}-desc`}>{desc}</desc>
+    <g fill="none" stroke="currentColor" stroke-opacity="0.18">
+      <circle cx="110" cy="110" r="40"></circle>
+      <circle cx="110" cy="110" r="70"></circle>
+      <circle cx="110" cy="110" r="100"></circle>
+    </g>
+    <circle cx="110" cy="110" fill="var(--color-accent)" r="6"></circle>
+    <g class="orbit-spin orbit-spin--1">
+      <circle cx="110" cy="70" fill="var(--color-accent)" r="4"></circle>
+    </g>
+    <g class="orbit-spin orbit-spin--2">
+      <circle cx="110" cy="40" fill="var(--color-accent)" fill-opacity="0.8" r="5"></circle>
+    </g>
+    <g class="orbit-spin orbit-spin--3">
+      <circle cx="110" cy="10" fill="currentColor" fill-opacity="0.5" r="3.5"></circle>
+    </g>
+  </svg>
+  {caption && <figcaption class="text-sm opacity-70">{caption}</figcaption>}
+</figure>
+
+<style>
+  /* transform-box:view-box 让 transform-origin 在 viewBox 坐标系内解析，
+   * 110 110 即图心；据此让每条轨道整体绕图心匀速自转。 */
+  .orbit-spin {
+    transform-box: view-box;
+    transform-origin: 110px 110px;
+  }
+
+  /* 尊重 reduced-motion：默认静止，仅在用户未要求减少动效时才旋转。 */
+  @media (prefers-reduced-motion: no-preference) {
+    .orbit-spin--1 {
+      animation: orbit-rotate 8s linear infinite;
+    }
+    .orbit-spin--2 {
+      animation: orbit-rotate 14s linear infinite;
+    }
+    .orbit-spin--3 {
+      animation: orbit-rotate 22s linear infinite reverse;
+    }
+  }
+
+  @keyframes orbit-rotate {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>

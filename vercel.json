@@ -23,7 +23,12 @@
     },
     {
       "source": "/notes/welcome",
-      "destination": "/notes/welcome-20250514",
+      "destination": "/notes",
+      "permanent": true
+    },
+    {
+      "source": "/notes/welcome-20250514",
+      "destination": "/notes",
       "permanent": true
     }
   ]

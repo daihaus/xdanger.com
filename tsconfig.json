@@ -3,7 +3,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
   },
   "exclude": ["dist", "node_modules", "public"],
   "extends": "astro/tsconfigs/base"
