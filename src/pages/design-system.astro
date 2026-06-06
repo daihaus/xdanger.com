@@ -1,0 +1,1251 @@
+---
+import CompoundInterest from "@/components/interactive/CompoundInterest";
+import OrbitDiagram from "@/components/viz/OrbitDiagram.astro";
+import WaveField from "@/components/viz/WaveField.astro";
+import PageLayout from "@/layouts/Base.astro";
+
+const meta = {
+  description:
+    "xdanger 的设计 token 系统：暖纸 / 炭墨的低饱和编辑配色，扩展出分类色、sequential 阶梯与图表基础设施色，配合间距、圆角、阴影与动效——交互组件在明暗两套主题里都保持克制。",
+  title: "Design System",
+};
+
+// ---- color swatch data (token, role, translucent?) ------------------------
+const surfaces = [
+  { var: "--color-bg", role: "page paper" },
+  { var: "--color-surface", role: "cards · panels" },
+  { var: "--color-surface-2", role: "sunken wells" },
+  { var: "--color-ink", role: "primary text" },
+  { var: "--color-ink-muted", role: "secondary text" },
+  { var: "--color-ink-faint", role: "captions · dates" },
+  { var: "--color-line", role: "hairline border" },
+  { var: "--color-line-strong", role: "divider" },
+];
+const accent = [
+  { var: "--color-accent", role: "primary action · link" },
+  { var: "--color-accent-hover", role: "hover state" },
+  { var: "--color-accent-weak", role: "tint · fill", translucent: true },
+  { var: "--color-accent-contrast", role: "text on accent" },
+];
+const categorical = [
+  { var: "--color-cat-1", role: "crimson" },
+  { var: "--color-cat-2", role: "terracotta" },
+  { var: "--color-cat-3", role: "ochre" },
+  { var: "--color-cat-4", role: "sage" },
+  { var: "--color-cat-5", role: "steel" },
+  { var: "--color-cat-6", role: "plum" },
+];
+const semantic = [
+  { var: "--color-positive", role: "gain · 收益" },
+  { var: "--color-positive-weak", role: "gain fill", translucent: true },
+  { var: "--color-negative", role: "loss · 亏损" },
+  { var: "--color-negative-weak", role: "loss fill", translucent: true },
+];
+const infra = [
+  { var: "--color-grid", role: "gridlines" },
+  { var: "--color-axis", role: "axes · ticks" },
+  { var: "--color-track", role: "slider bed" },
+  { var: "--color-placeholder", role: "dashed empty" },
+  { var: "--color-highlight", role: "hover wash", translucent: true },
+];
+const ramps = ["accent", "steel", "neutral"] as const;
+
+// ---- typography ------------------------------------------------------------
+const families = [
+  { var: "--font-mono", role: "mono · labels & data", sample: "May 04, 2025 · v2.0" },
+  { var: "--font-serif", role: "serif · 标题 display", sample: "重力加速度 决定文明" },
+  { var: "--font-sans", role: "sans · 正文 reading", sample: "Notes on tech, products, and life." },
+  {
+    var: "--font-writer",
+    role: "writer · headings (Inter)",
+    sample: "A quiet palette, built to move.",
+  },
+];
+const scale = [
+  { var: "--text-3xl", px: "48px", rem: "3rem", label: "Display heading" },
+  { var: "--text-2xl", px: "36px", rem: "2.25rem", label: "Page heading" },
+  { var: "--text-xl", px: "28px", rem: "1.75rem", label: "Section title" },
+  { var: "--text-lg", px: "22px", rem: "1.375rem", label: "Subhead" },
+  { var: "--text-md", px: "18px", rem: "1.125rem", label: "Lead paragraph body text" },
+  { var: "--text-base", px: "16px", rem: "1rem", label: "Body — the default reading size" },
+  { var: "--text-sm", px: "14px", rem: "0.875rem", label: "Labels, metadata and captions" },
+  { var: "--text-xs", px: "12px", rem: "0.75rem", label: "Mono ticks and fine print" },
+];
+
+// ---- space / radius / elevation / motion ----------------------------------
+const spaces = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({
+  var: `--space-${n}`,
+  px: [0, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128][n],
+}));
+const radii = ["xs", "sm", "md", "lg", "xl", "full"].map((k) => ({ var: `--radius-${k}` }));
+const shadows = ["sm", "md", "lg"].map((k) => ({ var: `--shadow-${k}` }));
+const durations = [
+  { var: "--dur-fast", val: "140ms" },
+  { var: "--dur-base", val: "240ms" },
+  { var: "--dur-slow", val: "420ms" },
+  { var: "--dur-slower", val: "720ms" },
+];
+const eases = [
+  { var: "--ease-standard", val: "entrances & UI" },
+  { var: "--ease-out", val: "decel · reveals" },
+  { var: "--ease-in-out", val: "moves A→B" },
+];
+
+// ---- in-context: multi-series lines (categorical) -------------------------
+const series = [
+  [38, 44, 40, 52, 60, 58, 70, 82, 88, 96],
+  [62, 58, 64, 55, 50, 60, 54, 48, 58, 64],
+  [20, 26, 30, 28, 36, 44, 40, 50, 56, 62],
+  [80, 74, 68, 72, 64, 58, 62, 54, 50, 46],
+  [44, 48, 46, 54, 58, 64, 60, 68, 74, 78],
+];
+const lineNames = ["crimson", "terracotta", "ochre", "sage", "steel"];
+const LW = 620,
+  LH = 220,
+  LPL = 8,
+  LPR = 8,
+  LPT = 14,
+  LPB = 22;
+const lx = (i: number) => LPL + (i / (series[0].length - 1)) * (LW - LPL - LPR);
+const ly = (v: number) => LPT + (1 - v / 100) * (LH - LPT - LPB);
+const gridYs = [0, 1, 2, 3, 4].map((g) => LPT + (g / 4) * (LH - LPT - LPB));
+
+// ---- in-context: sequential bars -------------------------------------------
+const bars = [22, 30, 38, 47, 57, 68, 80, 93].map((h, i) => ({
+  h,
+  step: Math.max(1, Math.min(6, Math.ceil(((i + 1) / 8) * 6))),
+}));
+---
+
+<PageLayout meta={meta}>
+  <div class="ds">
+    <!-- ===== Intro ===== -->
+    <section class="ds-intro">
+      <p class="ds-eyebrow">color · type · space · motion</p>
+      <h1 class="ds-display">A quiet palette<br />built to move.</h1>
+      <p class="ds-lede">
+        <em>xdanger.com</em> 的编辑型 token 系统——低饱和、像纸上的墨；扩展出分类色、sequential 阶梯与图表基础设施色，让交互可视化在明暗两套主题里都保持克制。切换右上角主题，下面每个值都是实时的
+        CSS 变量。
+      </p>
+      <div class="ds-meta">
+        <span><b>6</b> categorical hues</span>
+        <span><b>3</b> sequential ramps</span>
+        <span><b>4</b> type families</span>
+        <span><b>2</b> themes</span>
+      </div>
+    </section>
+
+    <!-- ===== COLOR ===== -->
+    <section id="color" class="ds-band">
+      <div class="ds-band-head">
+        <h2 class="ds-section-title">Color</h2>
+        <p class="ds-section-note">
+          每个色块都是实时的 <code>var()</code>。点色块复制 token
+          名，点下方数值复制当前主题解析出的颜色。
+        </p>
+      </div>
+
+      <h3 class="ds-group-title">surfaces &amp; ink</h3>
+      <p class="ds-group-note">
+        暖中性的主轴：纸、面板、四级墨色。色度压在 0.013 以下，任何一处都不显得被染色。
+      </p>
+      <div class="ds-swatch-grid">
+        {
+          surfaces.map((s) => (
+            <button class="ds-swatch" data-token={s.var} type="button" title={`copy var(${s.var})`}>
+              <span class="ds-chip" style={`background:var(${s.var})`} />
+              <span class="ds-swatch-meta">
+                <span class="ds-name">{s.var}</span>
+                <span class="ds-role">{s.role}</span>
+                <span class="ds-val" data-val-for={s.var} />
+              </span>
+            </button>
+          ))
+        }
+      </div>
+
+      <h3 class="ds-group-title">brand accent</h3>
+      <p class="ds-group-note">
+        主角色——并且 <em>跨主题换色</em>：浅色绯红、深色翠绿，与站点一致。
+        <code>--color-accent</code> 承载所有主操作、链接、单序列标记与焦点。浅色下它即分类色第 1 槽；分类色本身保持稳定（见下），多序列图在两套主题里都不丢身份。
+      </p>
+      <div class="ds-swatch-grid">
+        {
+          accent.map((s) => (
+            <button class="ds-swatch" data-token={s.var} type="button" title={`copy var(${s.var})`}>
+              <span class:list={["ds-chip", { "is-translucent": s.translucent }]}>
+                <span style={`position:absolute;inset:0;background:var(${s.var})`} />
+              </span>
+              <span class="ds-swatch-meta">
+                <span class="ds-name">{s.var}</span>
+                <span class="ds-role">{s.role}</span>
+                <span class="ds-val" data-val-for={s.var} />
+              </span>
+            </button>
+          ))
+        }
+      </div>
+
+      <h3 class="ds-group-title">categorical palette</h3>
+      <p class="ds-group-note">
+        同一寄存器里的六个色相——等明度、等色度，沿色轮均匀分布——多序列图因此清晰，没有哪一根在喊。
+      </p>
+      <div class="ds-swatch-grid cols-6">
+        {
+          categorical.map((s) => (
+            <button class="ds-swatch" data-token={s.var} type="button" title={`copy var(${s.var})`}>
+              <span class="ds-chip" style={`background:var(${s.var})`} />
+              <span class="ds-swatch-meta">
+                <span class="ds-name">{s.var}</span>
+                <span class="ds-role">{s.role}</span>
+                <span class="ds-val" data-val-for={s.var} />
+              </span>
+            </button>
+          ))
+        }
+      </div>
+
+      <h3 class="ds-group-title">sequential ramps</h3>
+      <p class="ds-group-note">
+        单色相强度阶梯，用于条形、分级填色与热力图。<code>1</code> = 最低值，<code>6</code> = 最强——方向随主题翻转，峰值永远读起来最重。<code
+          >accent</code
+        > 阶梯跟随品牌色：浅色绯红、深色翠绿。
+      </p>
+      {
+        ramps.map((key) => (
+          <div class="ds-ramp">
+            <div class="ds-ramp-label">seq · {key}</div>
+            <div class="ds-ramp-strip">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <button
+                  class="ds-ramp-cell"
+                  data-token={`--color-seq-${key}-${i}`}
+                  style={`background:var(--color-seq-${key}-${i});color:var(${i >= 4 ? "--color-bg" : "--color-ink"})`}
+                  title={`copy var(--color-seq-${key}-${i})`}
+                  type="button"
+                >
+                  {i}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+
+      <h3 class="ds-group-title">semantic · gain &amp; loss</h3>
+      <p class="ds-group-note">
+        财经视图用（收益 / 亏损）。下方是西式默认——涨绿跌红；按 A 股习惯把两个 token 对调即可。
+      </p>
+      <div class="ds-swatch-grid cols-4">
+        {
+          semantic.map((s) => (
+            <button class="ds-swatch" data-token={s.var} type="button" title={`copy var(${s.var})`}>
+              <span class:list={["ds-chip", { "is-translucent": s.translucent }]}>
+                <span style={`position:absolute;inset:0;background:var(${s.var})`} />
+              </span>
+              <span class="ds-swatch-meta">
+                <span class="ds-name">{s.var}</span>
+                <span class="ds-role">{s.role}</span>
+                <span class="ds-val" data-val-for={s.var} />
+              </span>
+            </button>
+          ))
+        }
+      </div>
+
+      <h3 class="ds-group-title">chart infrastructure</h3>
+      <p class="ds-group-note">
+        配角：网格线、坐标轴、滑块底槽、虚线占位，以及半透明的 hover 罩色。
+      </p>
+      <div class="ds-swatch-grid">
+        {
+          infra.map((s) => (
+            <button class="ds-swatch" data-token={s.var} type="button" title={`copy var(${s.var})`}>
+              <span class:list={["ds-chip", { "is-translucent": s.translucent }]}>
+                <span style={`position:absolute;inset:0;background:var(${s.var})`} />
+              </span>
+              <span class="ds-swatch-meta">
+                <span class="ds-name">{s.var}</span>
+                <span class="ds-role">{s.role}</span>
+                <span class="ds-val" data-val-for={s.var} />
+              </span>
+            </button>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- ===== TYPE ===== -->
+    <section id="type" class="ds-band">
+      <div class="ds-band-head">
+        <h2 class="ds-section-title">Typography</h2>
+        <p class="ds-section-note">
+          四个角色：mono 给标签与数据、serif 给标题、sans 给阅读、writer（Inter）给小标题。token
+          名沿用设计系统，实际字体仍是站点现用的 iA Writer / LXGW Bright / Inter，连同 fallback 链。
+        </p>
+      </div>
+      <div class="ds-type-families">
+        {
+          families.map((f) => (
+            <div class="ds-type-fam">
+              <span class="ds-tf-role">{f.var}</span>
+              <div class="ds-tf-sample" style={`font-family:var(${f.var})`}>
+                {f.sample}
+              </div>
+              <div class="ds-tf-stack">{f.role}</div>
+            </div>
+          ))
+        }
+      </div>
+      <div class="ds-type-scale">
+        {
+          scale.map((s) => (
+            <div class="ds-type-row">
+              <span class="ds-tr-token">{s.var}</span>
+              <span class="ds-tr-size">{s.px}</span>
+              <span class="ds-tr-sample" style={`font-size:${s.rem};font-family:var(--font-serif)`}>
+                {s.label}
+              </span>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- ===== SPACE ===== -->
+    <section id="space" class="ds-band">
+      <div class="ds-band-head">
+        <h2 class="ds-section-title">Space, radius &amp; elevation</h2>
+        <p class="ds-section-note">4px 间距基数、一套柔和圆角，三级暖色低对比阴影。</p>
+      </div>
+      <h3 class="ds-group-title">spacing</h3>
+      <div class="ds-space-scale">
+        {
+          spaces.map((s) => (
+            <div class="ds-space-row">
+              <span class="ds-sr-token">{s.var}</span>
+              <span class="ds-sr-bar" style={`width:var(${s.var})`} />
+              <span class="ds-sr-px">{s.px}px</span>
+            </div>
+          ))
+        }
+      </div>
+      <h3 class="ds-group-title">radius</h3>
+      <div class="ds-radius-row">
+        {
+          radii.map((r) => (
+            <div class="ds-radius-chip">
+              <div class="ds-rc-box" style={`border-radius:var(${r.var})`} />
+              <span class="ds-rc-label">{r.var}</span>
+            </div>
+          ))
+        }
+      </div>
+      <h3 class="ds-group-title">elevation</h3>
+      <div class="ds-shadow-row">
+        {
+          shadows.map((s) => (
+            <div class="ds-shadow-chip">
+              <div class="ds-sc-box" style={`box-shadow:var(${s.var})`} />
+              <span class="ds-sc-label">{s.var}</span>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- ===== MOTION ===== -->
+    <section id="motion" class="ds-band">
+      <div class="ds-band-head">
+        <h2 class="ds-section-title">Motion</h2>
+        <p class="ds-section-note">
+          时长与缓动。把鼠标移到任意卡片上触发；在 reduced-motion 下全部塌缩为 0ms。
+        </p>
+      </div>
+      <div class="ds-motion-grid">
+        {
+          durations.map((d) => (
+            <div class="ds-motion-card">
+              <span class="ds-mc-token">{d.var}</span> <span class="ds-mc-val">{d.val}</span>
+              <div class="ds-motion-track">
+                <div
+                  class="ds-motion-dot"
+                  style={`transition:left var(${d.var}) var(--ease-out)`}
+                />
+              </div>
+              <span class="ds-motion-hint">hover — duration</span>
+            </div>
+          ))
+        }
+        {
+          eases.map((e) => (
+            <div class="ds-motion-card">
+              <span class="ds-mc-token">{e.var}</span> <span class="ds-mc-val">{e.val}</span>
+              <div class="ds-motion-track">
+                <div
+                  class="ds-motion-dot"
+                  style={`transition:left var(--dur-slow) var(${e.var})`}
+                />
+              </div>
+              <span class="ds-motion-hint">hover — easing</span>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- ===== IN CONTEXT ===== -->
+    <section id="components" class="ds-band">
+      <div class="ds-band-head">
+        <h2 class="ds-section-title">In context</h2>
+        <p class="ds-section-note">
+          配色在干真活——这些正是 note / post 里会用的组件层（SVG · Canvas ·
+          React），全部随主题实时重画。 下方三件是站点真实组件，直接吃这套 token。
+        </p>
+      </div>
+
+      <div class="ds-demo-grid">
+        <figure class="ds-demo-card span-2">
+          <figcaption>Multi-series lines — categorical palette · 零 JS SVG</figcaption>
+          <div class="ds-demo-body">
+            <svg
+              viewBox={`0 0 ${LW} ${LH}`}
+              preserveAspectRatio="none"
+              class="ds-lines"
+              role="img"
+              aria-label="五序列折线图，使用分类色板"
+            >
+              {
+                gridYs.map((gy) => (
+                  <line
+                    x1={LPL}
+                    y1={gy}
+                    x2={LW - LPR}
+                    y2={gy}
+                    stroke="var(--color-grid)"
+                    stroke-width="1"
+                  />
+                ))
+              }
+              <line
+                x1={LPL}
+                y1={LH - LPB}
+                x2={LW - LPR}
+                y2={LH - LPB}
+                stroke="var(--color-axis)"
+                stroke-width="1"></line>
+              {
+                series.map((s, si) => (
+                  <Fragment>
+                    <polyline
+                      points={s.map((v, i) => `${lx(i).toFixed(1)},${ly(v).toFixed(1)}`).join(" ")}
+                      fill="none"
+                      stroke={`var(--color-cat-${si + 1})`}
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <circle
+                      cx={lx(s.length - 1).toFixed(1)}
+                      cy={ly(s.at(-1)!).toFixed(1)}
+                      r="3.2"
+                      fill={`var(--color-cat-${si + 1})`}
+                    />
+                  </Fragment>
+                ))
+              }
+            </svg>
+            <div class="ds-legend">
+              {
+                lineNames.map((nm, i) => (
+                  <span>
+                    <span class="ds-dot" style={`background:var(--color-cat-${i + 1})`} />
+                    {nm}
+                  </span>
+                ))
+              }
+            </div>
+          </div>
+        </figure>
+
+        <figure class="ds-demo-card">
+          <figcaption>Sequential bars — accent ramp</figcaption>
+          <div class="ds-demo-body">
+            <div class="ds-bars" aria-hidden="true">
+              {
+                bars.map((b) => (
+                  <div
+                    class="ds-bar"
+                    style={`height:${b.h}%;background:var(--color-seq-accent-${b.step})`}
+                  />
+                ))
+              }
+            </div>
+            <div class="ds-bars-foot">
+              <span>10 年 · <span class="big">2,594</span></span>
+              <span style="color:var(--color-positive)">收益 +159%</span>
+            </div>
+          </div>
+        </figure>
+
+        <figure class="ds-demo-card">
+          <figcaption>Gain / loss &amp; tooltip — semantic</figcaption>
+          <div class="ds-demo-body">
+            <div class="ds-fin-row"><span>BRK.A</span><span class="ds-tag-pos">+2.4%</span></div>
+            <div class="ds-fin-row"><span>AAPL</span><span class="ds-tag-pos">+0.8%</span></div>
+            <div class="ds-fin-row"><span>TTWO</span><span class="ds-tag-neg">−1.6%</span></div>
+            <div class="ds-tooltip">Mar 15 · 2025<b>+ 629 (63%)</b></div>
+          </div>
+        </figure>
+
+        <figure class="ds-demo-card">
+          <figcaption>Tags, links &amp; placeholder</figcaption>
+          <div class="ds-demo-body">
+            <div class="ds-tags">
+              {
+                categorical.map((s, i) => (
+                  <span class="ds-tag" style={`color:var(--color-cat-${i + 1})`}>
+                    {s.role}
+                  </span>
+                ))
+              }
+            </div>
+            <p class="ds-bits-note">
+              延伸阅读 <a class="ds-link" href="/notes">压缩即智慧?</a> —— 链接承载 accent 色。
+            </p>
+            <div class="ds-placeholder">product shot · drop image</div>
+          </div>
+        </figure>
+
+        <figure class="ds-demo-card">
+          <figcaption>Orbit — animated SVG（OrbitDiagram，零 JS 自动变色）</figcaption>
+          <div class="ds-demo-body ds-center">
+            <OrbitDiagram size={180} title="设计系统轨道示意" caption={undefined} />
+          </div>
+        </figure>
+
+        <figure class="ds-demo-card">
+          <figcaption>Waveform — Canvas（WaveField，切主题重新取色重画）</figcaption>
+          <div class="ds-demo-body">
+            <WaveField height={150} label="随主题变色的叠加波形" />
+          </div>
+        </figure>
+
+        <figure class="ds-demo-card span-2">
+          <figcaption>Compound interest — React island（CompoundInterest，状态联动）</figcaption>
+          <div class="ds-demo-body">
+            <CompoundInterest client:visible />
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <footer class="ds-foot">
+      <span>xdanger · design system</span>
+      <span class="ds-foot-mono"
+        >tokens 落在 <code>src/styles/global.css</code> · 用 <code>var(--color-…)</code></span
+      >
+    </footer>
+  </div>
+
+  <div id="ds-toast" class="ds-toast" role="status" aria-live="polite"></div>
+</PageLayout>
+
+<style>
+  .ds {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: var(--space-4);
+    padding-bottom: var(--space-10);
+  }
+
+  .ds code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-line);
+    padding: 0.08em 0.4em;
+    border-radius: var(--radius-xs);
+    color: var(--color-ink-muted);
+  }
+  .ds em {
+    font-style: italic;
+    color: var(--color-ink);
+  }
+
+  /* ---- intro ---- */
+  .ds-intro {
+    padding: var(--space-7) 0 var(--space-6);
+    max-width: 64ch;
+  }
+  .ds-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    letter-spacing: 0.04em;
+    color: var(--color-accent);
+    margin: 0 0 var(--space-4);
+  }
+  .ds-display {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(2.25rem, 6vw, 3rem);
+    line-height: 1.15;
+    letter-spacing: -0.012em;
+    color: var(--color-ink);
+    margin: 0 0 var(--space-5);
+  }
+  .ds-lede {
+    font-size: 1.125rem;
+    color: var(--color-ink-muted);
+    line-height: 1.8;
+    margin: 0 0 var(--space-6);
+    text-wrap: pretty;
+  }
+  .ds-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--color-ink-faint);
+  }
+  .ds-meta b {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  /* ---- bands & headings ---- */
+  .ds-band {
+    padding: var(--space-8) 0;
+    border-top: 1px solid var(--color-line);
+    scroll-margin-top: 72px;
+  }
+  .ds-band-head {
+    margin-bottom: var(--space-6);
+  }
+  .ds-section-title {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 2.25rem;
+    letter-spacing: -0.012em;
+    color: var(--color-ink);
+    margin: 0 0 var(--space-2);
+  }
+  .ds-section-note,
+  .ds-group-note {
+    color: var(--color-ink-muted);
+    max-width: 68ch;
+    margin: 0;
+    text-wrap: pretty;
+  }
+  .ds-group-title {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    letter-spacing: 0.04em;
+    color: var(--color-ink);
+    margin: var(--space-7) 0 var(--space-2);
+    padding-top: var(--space-4);
+    border-top: 1px dashed var(--color-line);
+  }
+  .ds-group-note {
+    font-size: 0.875rem;
+    margin-bottom: var(--space-4);
+  }
+
+  /* ---- swatches ---- */
+  .ds-swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: var(--space-3);
+  }
+  .ds-swatch-grid.cols-6 {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+  .ds-swatch-grid.cols-4 {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+  .ds-swatch {
+    display: block;
+    text-align: left;
+    padding: 0;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--color-surface);
+    cursor: pointer;
+    transition:
+      border-color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
+  }
+  .ds-swatch:hover {
+    border-color: var(--color-line-strong);
+    transform: translateY(-2px);
+  }
+  .ds-chip {
+    display: block;
+    height: 64px;
+    position: relative;
+  }
+  .ds-chip.is-translucent {
+    background-image:
+      linear-gradient(
+        45deg,
+        var(--color-line) 25%,
+        transparent 25%,
+        transparent 75%,
+        var(--color-line) 75%
+      ),
+      linear-gradient(
+        45deg,
+        var(--color-line) 25%,
+        transparent 25%,
+        transparent 75%,
+        var(--color-line) 75%
+      );
+    background-size: 12px 12px;
+    background-position:
+      0 0,
+      6px 6px;
+  }
+  .ds-swatch-meta {
+    display: block;
+    padding: var(--space-2) var(--space-3) var(--space-3);
+    border-top: 1px solid var(--color-line);
+  }
+  .ds-name {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink);
+    word-break: break-all;
+    line-height: 1.4;
+  }
+  .ds-role {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-ink-faint);
+    margin-top: 1px;
+  }
+  .ds-val {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-ink-muted);
+    margin-top: var(--space-2);
+    min-height: 0.85em;
+  }
+
+  /* ---- ramps ---- */
+  .ds-ramp {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-3);
+  }
+  .ds-ramp-label {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--color-ink-muted);
+  }
+  .ds-ramp-strip {
+    display: flex;
+    height: 52px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+  }
+  .ds-ramp-cell {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 4px;
+    cursor: pointer;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    transition: flex var(--dur-base) var(--ease-standard);
+  }
+  .ds-ramp-cell:hover {
+    flex: 1.6;
+  }
+
+  /* ---- type ---- */
+  .ds-type-families {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-7);
+  }
+  .ds-type-fam {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+    padding: var(--space-5);
+    background: var(--color-surface);
+  }
+  .ds-tf-role {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--color-accent);
+    margin-bottom: var(--space-3);
+  }
+  .ds-tf-sample {
+    font-size: 1.75rem;
+    line-height: 1.3;
+    margin-bottom: var(--space-2);
+    color: var(--color-ink);
+  }
+  .ds-tf-stack {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink-faint);
+    word-break: break-word;
+  }
+  .ds-type-scale {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .ds-type-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-5);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .ds-tr-token {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink-faint);
+    width: 88px;
+    flex: none;
+  }
+  .ds-tr-size {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink-faint);
+    width: 64px;
+    flex: none;
+  }
+  .ds-tr-sample {
+    color: var(--color-ink);
+    line-height: 1.2;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* ---- space / radius / shadow ---- */
+  .ds-space-scale {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+  }
+  .ds-space-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  .ds-sr-token {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink-muted);
+    width: 96px;
+    flex: none;
+  }
+  .ds-sr-bar {
+    height: 14px;
+    background: var(--color-accent);
+    border-radius: var(--radius-xs);
+  }
+  .ds-sr-px {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink-faint);
+  }
+  .ds-radius-row,
+  .ds-shadow-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+    margin-bottom: var(--space-6);
+  }
+  .ds-radius-chip,
+  .ds-shadow-chip {
+    text-align: center;
+  }
+  .ds-rc-box {
+    width: 96px;
+    height: 96px;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-line-strong);
+  }
+  .ds-rc-label,
+  .ds-sc-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink-muted);
+    margin-top: var(--space-2);
+    display: block;
+  }
+  .ds-sc-box {
+    width: 130px;
+    height: 84px;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+  }
+
+  /* ---- motion ---- */
+  .ds-motion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-4);
+  }
+  .ds-motion-card {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    background: var(--color-surface);
+    overflow: hidden;
+  }
+  .ds-mc-token {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink);
+  }
+  .ds-mc-val {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink-faint);
+  }
+  .ds-motion-track {
+    height: 8px;
+    background: var(--color-track);
+    border-radius: var(--radius-full);
+    margin-top: var(--space-3);
+    position: relative;
+  }
+  .ds-motion-dot {
+    position: absolute;
+    top: -3px;
+    left: 0;
+    width: 14px;
+    height: 14px;
+    border-radius: var(--radius-full);
+    background: var(--color-accent);
+  }
+  .ds-motion-card:hover .ds-motion-dot {
+    left: calc(100% - 14px);
+  }
+  .ds-motion-hint {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--color-ink-faint);
+    margin-top: var(--space-3);
+    display: block;
+  }
+
+  /* ---- demos ---- */
+  .ds-demo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+  }
+  .ds-demo-card {
+    margin: 0;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .ds-demo-card.span-2 {
+    grid-column: span 2;
+  }
+  .ds-demo-card figcaption {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink-muted);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .ds-demo-body {
+    padding: var(--space-5);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .ds-demo-body.ds-center {
+    align-items: center;
+  }
+
+  .ds-lines {
+    width: 100%;
+    height: 220px;
+    display: block;
+  }
+  .ds-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink-muted);
+  }
+  .ds-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ds-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  .ds-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 150px;
+  }
+  .ds-bar {
+    flex: 1;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  }
+  .ds-bars-foot {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-line);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--color-ink-muted);
+  }
+  .ds-bars-foot .big {
+    color: var(--color-accent);
+    font-size: 1.125rem;
+  }
+
+  .ds-fin-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--color-line);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+  }
+  .ds-fin-row:last-of-type {
+    border-bottom: none;
+  }
+  .ds-tag-pos {
+    color: var(--color-positive);
+    background: var(--color-positive-weak);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+  }
+  .ds-tag-neg {
+    color: var(--color-negative);
+    background: var(--color-negative-weak);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+  }
+  .ds-tooltip {
+    margin-top: var(--space-4);
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--color-ink);
+    color: var(--color-bg);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    align-self: flex-start;
+  }
+  .ds-tooltip::after {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    left: 18px;
+    width: 10px;
+    height: 10px;
+    background: var(--color-ink);
+    transform: rotate(45deg);
+  }
+  .ds-tooltip b {
+    color: var(--color-accent);
+  }
+
+  .ds-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+  }
+  .ds-tag {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    border: 1px solid currentColor;
+  }
+  .ds-bits-note {
+    margin: 0;
+    color: var(--color-ink-muted);
+    font-size: 0.875rem;
+  }
+  .ds-link {
+    color: var(--color-accent);
+    text-decoration: none;
+    border-bottom: 1.5px solid var(--color-accent-weak);
+    transition: border-color var(--dur-fast);
+  }
+  .ds-link:hover {
+    border-bottom-color: var(--color-accent);
+  }
+  .ds-placeholder {
+    margin-top: var(--space-4);
+    border: 1.5px dashed var(--color-placeholder);
+    border-radius: var(--radius-md);
+    height: 76px;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink-faint);
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 9px,
+      var(--color-surface-2) 9px,
+      var(--color-surface-2) 10px
+    );
+  }
+
+  /* ---- footer & toast ---- */
+  .ds-foot {
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--color-line);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--color-ink-faint);
+  }
+  .ds-toast {
+    position: fixed;
+    bottom: var(--space-6);
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--color-ink);
+    color: var(--color-bg);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity var(--dur-base) var(--ease-standard),
+      transform var(--dur-base) var(--ease-out);
+    z-index: 100;
+  }
+  .ds-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 760px) {
+    .ds-demo-grid {
+      grid-template-columns: 1fr;
+    }
+    .ds-demo-card.span-2 {
+      grid-column: span 1;
+    }
+    .ds-ramp {
+      grid-template-columns: 1fr;
+      gap: var(--space-2);
+    }
+  }
+</style>
+
+<script>
+  // Progressive enhancement: resolve each token to a hex/rgb string for the
+  // current theme, click-to-copy token names, and keep values fresh on theme
+  // toggle. The page is fully usable without this — chips already preview live
+  // via CSS vars.
+  const root = document.documentElement;
+  const probe = document.createElement("span");
+  probe.style.cssText = "position:absolute;width:0;height:0;visibility:hidden";
+  document.body.appendChild(probe);
+  const pc = document.createElement("canvas");
+  pc.width = pc.height = 1;
+  const pctx = pc.getContext("2d", { willReadFrequently: true })!;
+
+  function resolve(varName: string) {
+    probe.style.background = "transparent";
+    probe.style.background = `var(${varName})`;
+    const cs = getComputedStyle(probe).backgroundColor;
+    pctx.clearRect(0, 0, 1, 1);
+    pctx.fillStyle = "rgba(0,0,0,0)";
+    pctx.fillStyle = cs;
+    pctx.fillRect(0, 0, 1, 1);
+    const d = pctx.getImageData(0, 0, 1, 1).data;
+    return { r: d[0], g: d[1], b: d[2], a: +(d[3] / 255).toFixed(2) };
+  }
+  const hx = (n: number) => n.toString(16).padStart(2, "0");
+  function fmt(varName: string) {
+    const c = resolve(varName);
+    if (c.a >= 0.999) return `#${hx(c.r)}${hx(c.g)}${hx(c.b)}`.toUpperCase();
+    return `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`;
+  }
+
+  const valEls = Array.from(document.querySelectorAll<HTMLElement>(".ds-val"));
+  function refresh() {
+    for (const el of valEls) {
+      const name = el.getAttribute("data-val-for");
+      if (name) el.textContent = fmt(name);
+    }
+  }
+  refresh();
+
+  const toast = document.getElementById("ds-toast")!;
+  let toastTimer: ReturnType<typeof setTimeout>;
+  function copy(text: string, label?: string) {
+    navigator.clipboard?.writeText(text);
+    toast.textContent = label ?? `copied  ${text}`;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 1600);
+  }
+
+  for (const el of document.querySelectorAll<HTMLElement>("[data-token]")) {
+    el.addEventListener("click", () => {
+      const t = el.getAttribute("data-token")!;
+      copy(`var(${t})`, `copied  var(${t})`);
+    });
+  }
+
+  // Re-resolve values when the theme attribute flips.
+  new MutationObserver(refresh).observe(root, {
+    attributeFilter: ["data-theme"],
+    attributes: true,
+  });
+</script>
