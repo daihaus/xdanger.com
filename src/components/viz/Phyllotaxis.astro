@@ -1,0 +1,192 @@
+---
+/**
+ * Phyllotaxis — 第 2 层「Canvas + JS」。
+ *
+ * 主题：叶序 / 向日葵排布。第 i 颗种子放在极角 i·137.5°（黄金角 = 2π·(2−φ)）、
+ * 半径 ∝ √i 处——自然界里最省空间的堆叠。几百颗点 → SVG 节点会爆炸，用 Canvas。
+ *
+ * 主题契约（Canvas 手动取色 + 监听）：按种子序号沿 sequential 阶梯
+ * `--color-seq-accent-1…6` 上色（在 oklch 数值上插值，得到平滑渐变）；这些 token
+ * 两套主题都是字面 oklch，可被 `getComputedStyle` 读到。`MutationObserver` 监听
+ * `data-theme` 重新取色重画，`devicePixelRatio` 适配，`prefers-reduced-motion` 下
+ * 停转、只画一帧静态；离屏用 `IntersectionObserver` 暂停。多实例用 custom element。
+ */
+interface Props {
+  height?: number;
+  count?: number;
+  label?: string;
+  caption?: string;
+}
+const {
+  height = 300,
+  count = 560,
+  label = "黄金角叶序排布，按序号沿 sequential 阶梯上色",
+  caption,
+} = Astro.props;
+---
+
+<figure class="not-prose my-8 flex flex-col items-center gap-3">
+  <phyllotaxis-field class="block w-full" data-count={count}>
+    <canvas aria-label={label} class="block h-full w-full" role="img" style={`height:${height}px`}
+      >{label}</canvas
+    >
+  </phyllotaxis-field>
+  {caption && <figcaption class="text-foreground text-sm opacity-70">{caption}</figcaption>}
+</figure>
+
+<script>
+  type LCH = [number, number, number];
+
+  class PhyllotaxisField extends HTMLElement {
+    private canvas!: HTMLCanvasElement;
+    private ctx!: CanvasRenderingContext2D;
+    private raf = 0;
+    private phase = 0;
+    private count = 560;
+    // Fallback = LIGHT 字面值 of --color-seq-accent-1…6（取色失败时兜底）。
+    private stops: LCH[] = [
+      [0.935, 0.028, 19],
+      [0.865, 0.058, 19],
+      [0.775, 0.09, 19],
+      [0.675, 0.12, 19],
+      [0.575, 0.14, 19],
+      [0.475, 0.128, 19],
+    ];
+    private visible = true;
+    private themeObserver?: MutationObserver;
+    private resizeObserver?: ResizeObserver;
+    private intersectionObserver?: IntersectionObserver;
+    private motionMql?: MediaQueryList;
+
+    connectedCallback() {
+      const canvas = this.querySelector("canvas");
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx) return;
+      this.canvas = canvas;
+      this.ctx = ctx;
+      this.count = Number(this.dataset.count) || 560;
+
+      this.readColors();
+      this.resize();
+
+      this.themeObserver = new MutationObserver(() => {
+        this.readColors();
+        if (!this.visible || this.prefersReducedMotion()) this.draw();
+      });
+      this.themeObserver.observe(document.documentElement, {
+        attributeFilter: ["data-theme"],
+        attributes: true,
+      });
+
+      this.resizeObserver = new ResizeObserver(() => {
+        this.resize();
+        if (this.prefersReducedMotion()) this.draw();
+      });
+      this.resizeObserver.observe(this.canvas);
+
+      this.intersectionObserver = new IntersectionObserver((entries) => {
+        this.visible = entries[0]?.isIntersecting ?? true;
+        this.syncPlayback();
+      });
+      this.intersectionObserver.observe(this.canvas);
+
+      this.motionMql = window.matchMedia("(prefers-reduced-motion: reduce)");
+      this.motionMql.addEventListener("change", this.syncPlayback);
+
+      this.syncPlayback();
+    }
+
+    disconnectedCallback() {
+      cancelAnimationFrame(this.raf);
+      this.themeObserver?.disconnect();
+      this.resizeObserver?.disconnect();
+      this.intersectionObserver?.disconnect();
+      this.motionMql?.removeEventListener("change", this.syncPlayback);
+    }
+
+    private prefersReducedMotion() {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+
+    private readColors() {
+      const root = getComputedStyle(document.documentElement);
+      const parsed: LCH[] = [];
+      for (let n = 1; n <= 6; n += 1) {
+        const lch = this.parse(root.getPropertyValue(`--color-seq-accent-${n}`).trim());
+        if (lch) parsed.push(lch);
+      }
+      if (parsed.length === 6) this.stops = parsed;
+    }
+
+    // 解析 "oklch(L C H)"（L 可为 0.55 或 55%）。
+    private parse(s: string): LCH | null {
+      const m = s.match(/oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+)/i);
+      if (!m) return null;
+      const l = m[2] === "%" ? parseFloat(m[1]) / 100 : parseFloat(m[1]);
+      return [l, parseFloat(m[3]), parseFloat(m[4])];
+    }
+
+    // 沿阶梯插值（同一 ramp 内色相恒定，只插 L/C）。t ∈ [0,1]。
+    private colorAt(t: number) {
+      const x = Math.min(0.999, Math.max(0, t)) * 5;
+      const lo = Math.floor(x);
+      const f = x - lo;
+      const a = this.stops[lo];
+      const b = this.stops[Math.min(5, lo + 1)];
+      const l = a[0] + (b[0] - a[0]) * f;
+      const c = a[1] + (b[1] - a[1]) * f;
+      return `oklch(${l.toFixed(4)} ${c.toFixed(4)} ${a[2]})`;
+    }
+
+    private resize() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = this.canvas.clientWidth;
+      const h = this.canvas.clientHeight;
+      this.canvas.width = Math.max(1, Math.round(w * dpr));
+      this.canvas.height = Math.max(1, Math.round(h * dpr));
+      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    private syncPlayback = () => {
+      cancelAnimationFrame(this.raf);
+      if (this.visible && !this.prefersReducedMotion()) {
+        const loop = () => {
+          this.phase += 0.0016; // 极缓自转
+          this.draw();
+          this.raf = requestAnimationFrame(loop);
+        };
+        this.raf = requestAnimationFrame(loop);
+      } else {
+        this.draw();
+      }
+    };
+
+    private draw() {
+      const ctx = this.ctx;
+      const w = this.canvas.clientWidth;
+      const h = this.canvas.clientHeight;
+      if (w <= 0 || h <= 0) return;
+      ctx.clearRect(0, 0, w, h);
+      const cx = w / 2;
+      const cy = h / 2;
+      const N = this.count;
+      const GA = Math.PI * (3 - Math.sqrt(5)); // 黄金角 ≈ 137.5°
+      const spread = (Math.min(w, h) / 2 / Math.sqrt(N)) * 0.92;
+      const dotR = Math.max(1.4, spread * 0.5);
+      for (let i = 0; i < N; i += 1) {
+        const a = i * GA + this.phase;
+        const r = spread * Math.sqrt(i);
+        const x = cx + r * Math.cos(a);
+        const y = cy + r * Math.sin(a);
+        ctx.beginPath();
+        ctx.arc(x, y, dotR, 0, Math.PI * 2);
+        ctx.fillStyle = this.colorAt(i / (N - 1));
+        ctx.fill();
+      }
+    }
+  }
+
+  if (!customElements.get("phyllotaxis-field")) {
+    customElements.define("phyllotaxis-field", PhyllotaxisField);
+  }
+</script>

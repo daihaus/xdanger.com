@@ -1,0 +1,102 @@
+---
+/**
+ * EulerPhasor — 第 1 层「animated-SVG」（零 JS）。
+ *
+ * 主题：欧拉公式 e^{iθ} = cos θ + i·sin θ —— 复指数即单位圆上的匀速旋转。
+ * 这里把两段「本轮」（epicycle）嵌套：外臂绕圆心转、内臂绕外臂的端点转，
+ * 末端点描出一条 epitrochoid——正是傅里叶级数「圆叠圆」的最小单元。
+ *
+ * 主题契约：圆/轴用 `currentColor`（继承 `--color-foreground`）低透明度；
+ * 两条臂分别用 `--color-accent` 与 `--color-cat-3`，纯 CSS 旋转、零 JS 变色；
+ * 仅在 `prefers-reduced-motion: no-preference` 时旋转，否则停在初始角。
+ */
+interface Props {
+  size?: number;
+  caption?: string;
+}
+const { size = 240, caption } = Astro.props;
+const uid = crypto.randomUUID();
+
+// 几何：圆心 (120,120)；外臂半径 70、内臂半径 30（70:30 ≈ 远离 1:1 才好看）。
+const cx = 120;
+const cy = 120;
+const R1 = 70;
+const R2 = 30;
+const tip1y = cy - R1; // 外臂端点 = 内臂支点
+const tip2y = tip1y - R2; // 内臂端点 = 描线点
+---
+
+<figure class={`not-prose text-foreground my-8 flex flex-col items-center gap-3`}>
+  <svg
+    aria-labelledby={`${uid}-t ${uid}-d`}
+    class="h-auto max-w-full"
+    height={size}
+    role="img"
+    viewBox="0 0 240 240"
+    width={size}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <title id={`${uid}-t`}>欧拉公式的旋转本轮</title>
+    <desc id={`${uid}-d`}
+      >单位圆上两段嵌套的匀速旋转臂，演示 e^(iθ) 与傅里叶本轮，纯 CSS 动画、零 JS 随主题变色。</desc
+    >
+
+    <!-- 单位圆 + 实/虚轴（faint） -->
+    <g fill="none" stroke="currentColor">
+      <circle cx={cx} cy={cy} r={R1} stroke-opacity="0.18"></circle>
+      <line x1={cx - R1 - 14} y1={cy} x2={cx + R1 + 14} y2={cy} stroke-opacity="0.12"></line>
+      <line x1={cx} y1={cy - R1 - 14} x2={cx} y2={cy + R1 + 14} stroke-opacity="0.12"></line>
+    </g>
+
+    <!-- 外臂（accent）：绕圆心转 -->
+    <g class="ep-arm ep-arm1">
+      <line x1={cx} y1={cy} x2={cx} y2={tip1y} stroke="var(--color-accent)" stroke-width="2"></line>
+      <circle cx={cx} cy={tip1y} r="3" fill="var(--color-accent)" fill-opacity="0.85"></circle>
+      <!-- 内臂（cat-3 ochre）：绕外臂端点转，整体随外臂被一起旋转 -->
+      <g class="ep-arm ep-arm2">
+        <line
+          x1={cx}
+          y1={tip1y}
+          x2={cx}
+          y2={tip2y}
+          stroke="var(--color-cat-3)"
+          stroke-width="2"
+          stroke-opacity="0.9"></line>
+        <circle cx={cx} cy={tip2y} r="4.5" fill="var(--color-cat-3)"></circle>
+      </g>
+    </g>
+
+    <!-- 圆心标记 -->
+    <circle cx={cx} cy={cy} r="3.5" fill="var(--color-accent)"></circle>
+  </svg>
+  {caption && <figcaption class="text-sm opacity-70">{caption}</figcaption>}
+</figure>
+
+<style>
+  .ep-arm {
+    transform-box: view-box;
+  }
+  /* 外臂绕圆心 (120,120)，内臂绕外臂端点 (120,50)；内臂是外臂的子节点，
+     因此继承外臂旋转、再叠加自身旋转 = 嵌套本轮。 */
+  .ep-arm1 {
+    transform-origin: 120px 120px;
+  }
+  .ep-arm2 {
+    transform-origin: 120px 50px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ep-arm1 {
+      animation: ep-spin 14s linear infinite;
+    }
+    .ep-arm2 {
+      animation: ep-spin 4.2s linear infinite;
+    }
+  }
+
+  @keyframes ep-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>

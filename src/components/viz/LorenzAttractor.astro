@@ -1,0 +1,260 @@
+---
+/**
+ * LorenzAttractor — 第 2 层「Canvas + JS」。
+ *
+ * 主题：洛伦兹吸引子——确定性混沌的「蝴蝶」。积分
+ *   ẋ=σ(y−x), ẏ=x(ρ−z)−y, ż=xy−βz   (σ=10, ρ=28, β=8/3)
+ * 轨迹永不自交、永不重复，对初值极度敏感。上千段折线逐帧重描 → Canvas。
+ *
+ * 主题契约：沿轨迹进度用 sequential 阶梯 `--color-seq-steel-1…6` 上色（冷色，呼应
+ * 暖色系的其它图），彗头用 `--color-accent`；都两套主题字面 oklch、可 `getComputedStyle`
+ * 读取。`MutationObserver` 监听 `data-theme` 重画、DPR 适配、`prefers-reduced-motion`
+ * 下直接画完整吸引子、离屏暂停。多实例用 custom element。
+ */
+interface Props {
+  height?: number;
+  label?: string;
+  caption?: string;
+}
+const {
+  height = 300,
+  label = "洛伦兹混沌吸引子，沿轨迹用 sequential 阶梯上色",
+  caption,
+} = Astro.props;
+---
+
+<figure class="not-prose my-8 flex flex-col items-center gap-3">
+  <lorenz-attractor class="block w-full">
+    <canvas aria-label={label} class="block h-full w-full" role="img" style={`height:${height}px`}
+      >{label}</canvas
+    >
+  </lorenz-attractor>
+  {caption && <figcaption class="text-foreground text-sm opacity-70">{caption}</figcaption>}
+</figure>
+
+<script>
+  type LCH = [number, number, number];
+
+  class LorenzAttractor extends HTMLElement {
+    private canvas!: HTMLCanvasElement;
+    private ctx!: CanvasRenderingContext2D;
+    private raf = 0;
+    private head = 0;
+    // 投影到 (x,z) 平面的轨迹（吸引子空间）。
+    private px: number[] = [];
+    private pz: number[] = [];
+    private minX = 0;
+    private minZ = 0;
+    private sc = 1;
+    private ox = 0;
+    private oy = 0;
+    // Fallback = LIGHT 字面值 of --color-seq-steel-1…6 + --color-accent。
+    private stops: LCH[] = [
+      [0.935, 0.018, 235],
+      [0.855, 0.04, 235],
+      [0.76, 0.06, 235],
+      [0.66, 0.075, 235],
+      [0.565, 0.082, 235],
+      [0.47, 0.078, 235],
+    ];
+    private accent = "oklch(0.55 0.15 19)";
+    private visible = true;
+    private themeObserver?: MutationObserver;
+    private resizeObserver?: ResizeObserver;
+    private intersectionObserver?: IntersectionObserver;
+    private motionMql?: MediaQueryList;
+
+    connectedCallback() {
+      const canvas = this.querySelector("canvas");
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx) return;
+      this.canvas = canvas;
+      this.ctx = ctx;
+
+      this.integrate();
+      this.readColors();
+      this.resize();
+
+      this.themeObserver = new MutationObserver(() => {
+        this.readColors();
+        if (!this.visible || this.prefersReducedMotion()) this.draw();
+      });
+      this.themeObserver.observe(document.documentElement, {
+        attributeFilter: ["data-theme"],
+        attributes: true,
+      });
+
+      this.resizeObserver = new ResizeObserver(() => {
+        this.resize();
+        if (this.prefersReducedMotion()) this.draw();
+      });
+      this.resizeObserver.observe(this.canvas);
+
+      this.intersectionObserver = new IntersectionObserver((entries) => {
+        this.visible = entries[0]?.isIntersecting ?? true;
+        this.syncPlayback();
+      });
+      this.intersectionObserver.observe(this.canvas);
+
+      this.motionMql = window.matchMedia("(prefers-reduced-motion: reduce)");
+      this.motionMql.addEventListener("change", this.syncPlayback);
+
+      this.syncPlayback();
+    }
+
+    disconnectedCallback() {
+      cancelAnimationFrame(this.raf);
+      this.themeObserver?.disconnect();
+      this.resizeObserver?.disconnect();
+      this.intersectionObserver?.disconnect();
+      this.motionMql?.removeEventListener("change", this.syncPlayback);
+    }
+
+    private prefersReducedMotion() {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+
+    // 欧拉积分一次，丢弃前 200 步暂态。
+    private integrate() {
+      const sigma = 10,
+        rho = 28,
+        beta = 8 / 3,
+        dt = 0.005,
+        M = 5200;
+      let x = 0.1,
+        y = 0,
+        z = 0;
+      for (let i = 0; i < 200; i += 1) {
+        const dx = sigma * (y - x),
+          dy = x * (rho - z) - y,
+          dz = x * y - beta * z;
+        x += dx * dt;
+        y += dy * dt;
+        z += dz * dt;
+      }
+      let minX = Infinity,
+        maxX = -Infinity,
+        minZ = Infinity,
+        maxZ = -Infinity;
+      for (let i = 0; i < M; i += 1) {
+        const dx = sigma * (y - x),
+          dy = x * (rho - z) - y,
+          dz = x * y - beta * z;
+        x += dx * dt;
+        y += dy * dt;
+        z += dz * dt;
+        this.px.push(x);
+        this.pz.push(z);
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (z < minZ) minZ = z;
+        if (z > maxZ) maxZ = z;
+      }
+      this.minX = minX;
+      this.minZ = minZ;
+      this.spanX = maxX - minX;
+      this.spanZ = maxZ - minZ;
+    }
+    private spanX = 1;
+    private spanZ = 1;
+
+    private readColors() {
+      const root = getComputedStyle(document.documentElement);
+      const parsed: LCH[] = [];
+      for (let n = 1; n <= 6; n += 1) {
+        const lch = this.parse(root.getPropertyValue(`--color-seq-steel-${n}`).trim());
+        if (lch) parsed.push(lch);
+      }
+      if (parsed.length === 6) this.stops = parsed;
+      const acc = root.getPropertyValue("--color-accent").trim();
+      if (acc) this.accent = acc;
+    }
+
+    private parse(s: string): LCH | null {
+      const m = s.match(/oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+)/i);
+      if (!m) return null;
+      const l = m[2] === "%" ? parseFloat(m[1]) / 100 : parseFloat(m[1]);
+      return [l, parseFloat(m[3]), parseFloat(m[4])];
+    }
+
+    private bandColor(b: number) {
+      const s = this.stops[Math.min(5, Math.max(0, b))];
+      return `oklch(${s[0]} ${s[1]} ${s[2]})`;
+    }
+
+    private resize() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = this.canvas.clientWidth;
+      const h = this.canvas.clientHeight;
+      this.canvas.width = Math.max(1, Math.round(w * dpr));
+      this.canvas.height = Math.max(1, Math.round(h * dpr));
+      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const pad = 16;
+      this.sc = Math.min((w - 2 * pad) / this.spanX, (h - 2 * pad) / this.spanZ);
+      this.ox = (w - this.spanX * this.sc) / 2;
+      this.oy = (h - this.spanZ * this.sc) / 2;
+    }
+
+    private syncPlayback = () => {
+      cancelAnimationFrame(this.raf);
+      if (this.visible && !this.prefersReducedMotion()) {
+        const loop = () => {
+          this.head += 26;
+          if (this.head >= this.px.length) this.head = 0;
+          this.draw();
+          this.raf = requestAnimationFrame(loop);
+        };
+        this.raf = requestAnimationFrame(loop);
+      } else {
+        this.head = this.px.length;
+        this.draw();
+      }
+    };
+
+    private sx(x: number) {
+      return this.ox + (x - this.minX) * this.sc;
+    }
+    private sy(z: number) {
+      const h = this.canvas.clientHeight;
+      return h - this.oy - (z - this.minZ) * this.sc;
+    }
+
+    private draw() {
+      const ctx = this.ctx;
+      const w = this.canvas.clientWidth;
+      const h = this.canvas.clientHeight;
+      if (w <= 0 || h <= 0 || this.px.length === 0) return;
+      ctx.clearRect(0, 0, w, h);
+      const M = this.px.length;
+      const head = Math.min(this.head || M, M);
+      ctx.lineWidth = 1.1;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      // 6 个进度色带，各带从上一带末点起笔以保持连续。
+      for (let b = 0; b < 6; b += 1) {
+        const start = Math.floor((b * M) / 6);
+        const end = Math.min(head, Math.floor(((b + 1) * M) / 6));
+        if (end <= start) continue;
+        ctx.beginPath();
+        ctx.moveTo(this.sx(this.px[start]), this.sy(this.pz[start]));
+        for (let i = start + 1; i < end; i += 1)
+          ctx.lineTo(this.sx(this.px[i]), this.sy(this.pz[i]));
+        ctx.strokeStyle = this.bandColor(b);
+        ctx.globalAlpha = 0.92;
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      // 彗头（仅动画进行中）。
+      if (head < M) {
+        ctx.beginPath();
+        ctx.arc(this.sx(this.px[head - 1]), this.sy(this.pz[head - 1]), 2.6, 0, Math.PI * 2);
+        ctx.fillStyle = this.accent;
+        ctx.fill();
+      }
+    }
+  }
+
+  if (!customElements.get("lorenz-attractor")) {
+    customElements.define("lorenz-attractor", LorenzAttractor);
+  }
+</script>

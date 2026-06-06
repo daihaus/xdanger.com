@@ -1,0 +1,129 @@
+---
+/**
+ * FibonacciSpiral — 第 1 层「animated-SVG」（零 JS · 静态）。
+ *
+ * 主题：黄金比 φ 与斐波那契方块。边长 1,1,2,3,5,8,13,21 的正方形按 φ 比例铺成
+ * 一个 34:21 的矩形；叠加真正的**对数黄金螺旋** r = r₀·e^{kθ}（每转四分之一圈半径
+ * 乘以 φ）。几何全在构建期算好，运行时零 JS。
+ *
+ * 主题契约：方块用 sequential 阶梯 `--color-seq-accent-1…6`（小→浅、大→浓），编号用
+ * `--color-ink`，螺旋用 `--color-accent`——都随 `[data-theme]` 自动变色。无动画，
+ * 天然满足 reduced-motion。
+ */
+interface Props {
+  size?: number;
+  caption?: string;
+}
+const { size = 340, caption } = Astro.props;
+const uid = crypto.randomUUID();
+
+const fibs = [1, 1, 2, 3, 5, 8, 13, 21];
+
+// 螺旋方块平铺：方向按 R→U→L→D 循环逆时针外扩，每块边长正好等于所贴的那条边。
+// 抽象坐标 y 向上；(x0,y0) 为方块的 min-x / min-y 角。
+type Rect = { x0: number; y0: number; f: number; i: number };
+const rects: Rect[] = [];
+let minx = 0,
+  maxx = 0,
+  miny = 0,
+  maxy = 0;
+fibs.forEach((f, i) => {
+  if (i === 0) {
+    rects.push({ x0: 0, y0: 0, f, i });
+    [minx, maxx, miny, maxy] = [0, f, 0, f];
+    return;
+  }
+  const dir = ["R", "U", "L", "D"][(i - 1) % 4];
+  let x0: number;
+  let y0: number;
+  if (dir === "R") [x0, y0] = [maxx, miny];
+  else if (dir === "U") [x0, y0] = [minx, maxy];
+  else if (dir === "L") [x0, y0] = [minx - f, miny];
+  else [x0, y0] = [minx, miny - f]; // D
+  rects.push({ x0, y0, f, i });
+  minx = Math.min(minx, x0);
+  maxx = Math.max(maxx, x0 + f);
+  miny = Math.min(miny, y0);
+  maxy = Math.max(maxy, y0 + f);
+});
+
+// 抽象坐标 → SVG（y 翻转）。
+const pad = 10;
+const s = (size - 2 * pad) / (maxx - minx);
+const W = size;
+const H = Math.round((maxy - miny) * s + 2 * pad);
+const sx = (ax: number) => pad + (ax - minx) * s;
+const sy = (ay: number) => pad + (maxy - ay) * s; // 点的 y
+const seqStep = (i: number) =>
+  Math.min(6, Math.max(1, Math.round(1 + (i / (fibs.length - 1)) * 5)));
+
+// 对数黄金螺旋：r = r₀·e^{kθ}，k = ln(φ)·2/π（每 π/2 弧度 × φ）。极点取小方块的「眼」。
+const PHI = (1 + Math.sqrt(5)) / 2;
+const k = (Math.log(PHI) * 2) / Math.PI;
+const poleAx = 1;
+const poleAy = 0.5;
+const r0 = 0.22;
+const spiralPts: string[] = [];
+for (let j = 0; j <= 260; j += 1) {
+  const theta = (j / 260) * 15.2; // ≈ 2.4 圈
+  const r = r0 * Math.exp(k * theta);
+  const ax = poleAx + r * Math.cos(theta);
+  const ay = poleAy + r * Math.sin(theta);
+  spiralPts.push(`${sx(ax).toFixed(2)},${sy(ay).toFixed(2)}`);
+}
+const spiralD = `M${spiralPts.join(" L")}`;
+---
+
+<figure class="not-prose text-foreground my-8 flex flex-col items-center gap-3">
+  <svg
+    aria-labelledby={`${uid}-t ${uid}-d`}
+    class="h-auto max-w-full"
+    height={(size * H) / W}
+    role="img"
+    viewBox={`0 0 ${W} ${H}`}
+    width={size}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <title id={`${uid}-t`}>斐波那契方块与黄金螺旋</title>
+    <desc id={`${uid}-d`}
+      >边长 1,1,2,3,5,8,13,21 的正方形铺成 φ 比例矩形，叠加对数黄金螺旋；按 sequential 阶梯上色。</desc
+    >
+    {
+      rects.map((r) => {
+        const step = seqStep(r.i);
+        return (
+          <Fragment>
+            <rect
+              x={sx(r.x0)}
+              y={sy(r.y0 + r.f)}
+              width={r.f * s}
+              height={r.f * s}
+              fill={`var(--color-seq-accent-${step})`}
+              fill-opacity="0.16"
+              stroke={`var(--color-seq-accent-${step})`}
+              stroke-width="1.4"
+            />
+            <text
+              x={sx(r.x0 + r.f / 2)}
+              y={sy(r.y0 + r.f / 2)}
+              fill="var(--color-ink)"
+              font-size={Math.min(20, Math.max(9, r.f * s * 0.26))}
+              text-anchor="middle"
+              dominant-baseline="central"
+              opacity="0.72"
+            >
+              {r.f}
+            </text>
+          </Fragment>
+        );
+      })
+    }
+    <path
+      d={spiralD}
+      fill="none"
+      stroke="var(--color-accent)"
+      stroke-width="2"
+      stroke-linecap="round"></path>
+  </svg>
+  {caption && <figcaption class="text-sm opacity-70">{caption}</figcaption>}
+</figure>
