@@ -13,11 +13,11 @@ type Props<Tag extends HTMLTag> = Polymorphic<{ as: Tag }> & {
 const { as: Tag = "div", note, isPreview = false } = Astro.props;
 const noteUrl = getNotePath(note);
 
-// 完整 note 页才**渲染** MDX 正文（含其中的交互组件）；列表预览只渲染纯文本摘要，不渲染
-// `<Content />`——否则给每张卡片注水 islands / Canvas / KaTeX 既浪费，定高组件还会逃出
-// line-clamp，给文档塞进幽灵滚动高度（footer 下方大片空白即此因）。摘要优先取 frontmatter
-// description，回退到去掉标记后的正文开头。（render() 只拿组件工厂，不渲染就不实例化 islands。）
-const { Content } = await render(note);
+// 完整 note 页才**渲染** MDX 正文（含其中的交互组件）；列表预览只渲染纯文本摘要，既不渲染
+// `<Content />` 也不调用 `render()`——否则每张卡片都要加载该 MDX 的整个模块图（import 的组件），
+// 还会注水 islands / Canvas / KaTeX，定高组件逃出 line-clamp 给文档塞进幽灵滚动（footer 下方大片
+// 空白即此因）。摘要优先取 frontmatter description，回退到去掉标记后的正文开头。
+const Content = isPreview ? null : (await render(note)).Content;
 
 function bodyExcerpt(body = "") {
   return body
@@ -76,6 +76,6 @@ const previewText = isPreview ? note.data.description?.trim() || bodyExcerpt(not
         : `${PROSE_ARTICLE} max-w-none`,
     ]}
   >
-    {isPreview ? previewText : <Content />}
+    {isPreview ? previewText : Content && <Content />}
   </div>
 </article>
