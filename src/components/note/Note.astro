@@ -11,8 +11,30 @@ type Props<Tag extends HTMLTag> = Polymorphic<{ as: Tag }> & {
 };
 
 const { as: Tag = "div", note, isPreview = false } = Astro.props;
-const { Content } = await render(note);
 const noteUrl = getNotePath(note);
+
+// 完整 note 页才**渲染** MDX 正文（含其中的交互组件）；列表预览只渲染纯文本摘要，不渲染
+// `<Content />`——否则给每张卡片注水 islands / Canvas / KaTeX 既浪费，定高组件还会逃出
+// line-clamp，给文档塞进幽灵滚动高度（footer 下方大片空白即此因）。摘要优先取 frontmatter
+// description，回退到去掉标记后的正文开头。（render() 只拿组件工厂，不渲染就不实例化 islands。）
+const { Content } = await render(note);
+
+function bodyExcerpt(body = "") {
+  return body
+    .replace(/^import\s.+$/gm, "") // import 行
+    .replace(/```[\s\S]*?```/g, "") // 代码块
+    .replace(/<[^>]+>/g, " ") // JSX / HTML 标签
+    .replace(/\$[^$]*\$/g, "") // 行内 KaTeX
+    .replace(/`([^`]*)`/g, "$1") // 行内 code
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1") // 图片 / 链接 → 文本
+    .replace(/^#{1,6}\s+/gm, "") // 标题井号
+    .replace(/[*_>#]/g, "") // 强调 / 引用残留
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 200);
+}
+
+const previewText = isPreview ? note.data.description?.trim() || bodyExcerpt(note.body) : "";
 ---
 
 <article
@@ -54,6 +76,6 @@ const noteUrl = getNotePath(note);
         : `${PROSE_ARTICLE} max-w-none`,
     ]}
   >
-    <Content />
+    {isPreview ? previewText : <Content />}
   </div>
 </article>
