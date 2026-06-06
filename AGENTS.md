@@ -61,8 +61,9 @@ documented in the note atop `astro.config.ts`.
 
 > **Heads-up:** `pnpm dev` now binds to all interfaces (`0.0.0.0`), so it's reachable not only over
 > Tailscale but on any LAN the machine is attached to — run it only on networks you trust, or add a
-> firewall rule. To stay localhost-only, run `astro dev` directly (no cert prestep) or delete
-> `.cert/anyip/` and use Astro's default.
+> firewall rule. Astro flips to HTTPS + all-interfaces whenever `.cert/anyip/` exists, regardless of
+> how the cert got there — so to stay localhost-only, delete `.cert/anyip/` (if present) **and** start
+> with `astro dev` directly, so the prestep doesn't re-provision it.
 
 ### File-level checks
 

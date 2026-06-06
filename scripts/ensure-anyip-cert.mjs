@@ -5,10 +5,12 @@
 // The cert is a real Let's Encrypt wildcard for `*.anyip.dev` whose private key
 // is intentionally public — transport security comes from Tailscale, this just
 // satisfies browsers' secure-context requirement. astro.config.ts auto-serves
-// HTTPS (and binds all interfaces on :4321) whenever the cert is present, so
-// this script is what flips `pnpm dev` into Tailscale/LAN mode. Run `astro dev`
-// directly (no prestep) to stay localhost-only. See AGENTS.md → "Remote
-// debugging over Tailscale".
+// HTTPS (and binds all interfaces on :4321) whenever `.cert/anyip/` is present
+// — gated purely on the files existing, not on this script having run. So this
+// script is what flips `pnpm dev` into Tailscale/LAN mode by provisioning that
+// cert; to stay localhost-only, skip the prestep AND make sure `.cert/anyip/`
+// is absent (a leftover cert keeps HTTPS/all-interfaces on by itself). See
+// AGENTS.md → "Remote debugging over Tailscale".
 //
 // The download runs through `curl` (the tool this repo has always used for it)
 // rather than fetch()+writeFile: the network read and the file write both happen
