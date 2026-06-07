@@ -28,7 +28,10 @@ export const rehypePullQuotes: Plugin<[], Root> = () => (tree) => {
     const blocks = node.children.filter((c): c is Element => c.type === "element");
     // 仅单个 <p> 的引用才可能是 pull——多段 / 含列表 / 含代码块的长引用一律 calm。
     if (blocks.length !== 1 || blocks[0].tagName !== "p") return;
-    if ([...collectText(node.children)].length > MAX_PULL_LENGTH) return;
+    // 先压缩连续 whitespace 为单空格并 trim，再按码点计数——否则 markdown 软换行 / 多空格
+    // 等格式性空白会被计入，让「内容相同、排版不同」的引用落到不同档位。
+    const textLength = [...collectText(node.children).replace(/\s+/g, " ").trim()].length;
+    if (textLength > MAX_PULL_LENGTH) return;
 
     const props = (node.properties ??= {});
     const existing = Array.isArray(props.className)
