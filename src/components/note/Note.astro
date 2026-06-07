@@ -35,6 +35,13 @@ function bodyExcerpt(body = "") {
 }
 
 const previewText = isPreview ? note.data.description?.trim() || bodyExcerpt(note.body) : "";
+
+// 日期格式与 post 对齐：详情页 `{ month: "long" }` →「June 16, 2007」（同 Masthead），
+// 列表预览用 siteConfig 默认短格式 →「16 Jun 2007」（同 PostPreview）。原先 note 两处都用
+// 带时分的 `MM/DD/YY, hh:mm` 与全站日期约定不符。
+const dateTimeOptions: Intl.DateTimeFormatOptions | undefined = isPreview
+  ? undefined
+  : { month: "long" };
 ---
 
 <article
@@ -58,16 +65,7 @@ const previewText = isPreview ? note.data.description?.trim() || bodyExcerpt(not
       )
     }
   </Tag>
-  <FormattedDate
-    dateTimeOptions={{
-      hour: "2-digit",
-      minute: "2-digit",
-      year: "2-digit",
-      month: "2-digit",
-      day: "2-digit",
-    }}
-    date={note.data.publishDate}
-  />
+  <FormattedDate dateTimeOptions={dateTimeOptions} date={note.data.publishDate} />
   <div
     class="mt-4 [&>p:last-of-type]:mb-0"
     class:list={[
