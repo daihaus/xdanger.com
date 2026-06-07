@@ -217,8 +217,8 @@ Conventional Commits + Gitmoji:
 
 GitHub Actions (`.github/workflows/deploy.yml`) builds via `withastro/action@v3` (which
 auto-detects pnpm from the lockfile) and deploys to GitHub Pages. Vercel is configured via
-`vercel.json` for the canonical site at `www.xdanger.com` (see `src/site.config.ts`; the apex
-`xdanger.com` redirects to `www`).
+`vercel.json` for the canonical site at `xdanger.com` (see `src/site.config.ts`; the `www`
+subdomain redirects to the apex `xdanger.com`).
 
 ## Automation: issue → note
 
