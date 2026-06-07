@@ -1,0 +1,97 @@
+---
+/**
+ * FoundryLockInStack — 第 1 层「animated-SVG」（零 JS · 静态）。
+ *
+ * 主题：以晶圆厂为中心的认证金字塔 / 锁定栈。自底向上五层，每一层都要 foundry 或
+ * 节点级认证；换 foundry / EDA 须整链重认证——这正是 lock-in 的来源。
+ *
+ * 主题契约：五层用 sequential steel 阶梯（底最深、顶最浅，表达「由工艺到成品」的层级），
+ * 文字、边框、序号用 currentColor，切 data-theme 时零 JS 自动变色。纯静态，天然满足
+ * reduced-motion。纵向堆叠、viewBox 自适应，窄屏不溢出。
+ */
+interface Props {
+  caption?: string;
+}
+const { caption } = Astro.props;
+const uid = crypto.randomUUID();
+
+type Layer = { n: number; title: string; sub: string; step: number };
+// 自顶向下渲染；step 取 sequential steel 阶梯序号（底层最深）。
+const layers: Layer[] = [
+  { n: 5, title: "生态联盟", sub: "TSMC OIP · Samsung SAFE · Intel Foundry", step: 2 },
+  { n: 4, title: "设计服务公司认证", sub: "TSMC VCA（须培训 + 考核）", step: 3 },
+  { n: 3, title: "IP 须硅验证", sub: "foundry 认证：PCIe · HBM PHY · SerDes", step: 4 },
+  { n: 2, title: "EDA 工具认证", sub: "按节点逐一认证（A16 / N2 / N3…）", step: 5 },
+  { n: 1, title: "PDK 工艺规则手册", sub: "DRC · LVS · SPICE 模型（foundry 提供）", step: 6 },
+];
+
+const W = 360;
+const padX = 10;
+const padY = 12;
+const rowH = 52;
+const gap = 9;
+const H = padY * 2 + layers.length * rowH + (layers.length - 1) * gap;
+const rowY = (i: number) => padY + i * (rowH + gap);
+---
+
+<figure class="not-prose text-foreground my-8 flex flex-col items-center gap-3">
+  <svg
+    aria-labelledby={`${uid}-t ${uid}-d`}
+    class="h-auto max-w-full"
+    height={H}
+    role="img"
+    viewBox={`0 0 ${W} ${H}`}
+    width={W}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <title id={`${uid}-t`}>以晶圆厂为中心的认证金字塔</title>
+    <desc id={`${uid}-d`}
+      >自底向上五层：PDK 工艺规则、EDA 工具认证、IP 硅验证、设计服务公司认证、生态联盟。每层都需
+      foundry 或节点级认证，换厂须整链重认证，形成锁定。</desc
+    >
+    {
+      layers.map((l, i) => (
+        <Fragment>
+          <rect
+            x={padX}
+            y={rowY(i)}
+            width={W - padX * 2}
+            height={rowH}
+            rx="10"
+            fill={`var(--color-seq-steel-${l.step})`}
+            fill-opacity="0.16"
+            stroke={`var(--color-seq-steel-${l.step})`}
+            stroke-width="1.4"
+          />
+          <circle
+            cx={padX + 25}
+            cy={rowY(i) + rowH / 2}
+            r="13"
+            fill={`var(--color-seq-steel-${l.step})`}
+            fill-opacity="0.3"
+            stroke={`var(--color-seq-steel-${l.step})`}
+            stroke-width="1.2"
+          />
+          <text
+            x={padX + 25}
+            y={rowY(i) + rowH / 2}
+            text-anchor="middle"
+            dominant-baseline="central"
+            font-size="13"
+            font-weight="700"
+            fill="currentColor"
+          >
+            {l.n}
+          </text>
+          <text x={padX + 50} y={rowY(i) + 21} font-size="14" font-weight="700" fill="currentColor">
+            {l.title}
+          </text>
+          <text x={padX + 50} y={rowY(i) + 39} font-size="11.5" fill="currentColor" opacity="0.72">
+            {l.sub}
+          </text>
+        </Fragment>
+      ))
+    }
+  </svg>
+  {caption && <figcaption class="text-sm opacity-70">{caption}</figcaption>}
+</figure>

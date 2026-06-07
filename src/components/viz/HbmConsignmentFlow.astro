@@ -1,0 +1,167 @@
+---
+/**
+ * HbmConsignmentFlow — 第 1 层「animated-SVG」（零 JS · 静态）。
+ *
+ * 主题：HBM 的「自带料」机制。产品方（Nvidia / AMD / Google）直接向内存厂采购 HBM、
+ * 预付锁产能，再把自购的 HBM 连同台积电流片的 logic die 一起交给台积电做 CoWoS 封装——
+ * 代工厂只做封装，不代为采购内存。两路在 CoWoS 汇合。
+ *
+ * 主题契约：中性框用 currentColor（继承前景色），唯一的「引力中心」CoWoS 框用 --color-accent
+ * 系列高亮，切 data-theme 时零 JS 变色。纯静态，天然满足 reduced-motion。纵向布局、viewBox
+ * 自适应，窄屏不溢出。
+ */
+interface Props {
+  caption?: string;
+}
+const { caption } = Astro.props;
+const uid = crypto.randomUUID();
+
+const W = 360;
+const H = 398;
+---
+
+<figure class="not-prose text-foreground my-8 flex flex-col items-center gap-3">
+  <svg
+    aria-labelledby={`${uid}-t ${uid}-d`}
+    class="h-auto max-w-full"
+    height={H}
+    role="img"
+    viewBox={`0 0 ${W} ${H}`}
+    width={W}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <title id={`${uid}-t`}>HBM 的「自带料」采购与 CoWoS 封装流向</title>
+    <desc id={`${uid}-d`}
+      >产品方直接向 SK Hynix / Samsung / Micron 采购 HBM 并预付锁产能，再把自购 HBM 连同台积电流片的
+      逻辑芯片一起交给台积电做 CoWoS 2.5D 封装，产出成品 AI
+      加速器。代工厂只负责封装、不代为采购内存。</desc
+    >
+
+    <defs>
+      <marker
+        id={`${uid}-ah`}
+        markerWidth="9"
+        markerHeight="9"
+        refX="5.5"
+        refY="3"
+        orient="auto"
+        markerUnits="userSpaceOnUse"
+      >
+        <path d="M0,0 L6,3 L0,6 Z" fill="currentColor" fill-opacity="0.55"></path>
+      </marker>
+    </defs>
+
+    <!-- 连接线 -->
+    <g
+      fill="none"
+      stroke="currentColor"
+      stroke-opacity="0.5"
+      stroke-width="1.6"
+      marker-end={`url(#${uid}-ah)`}
+    >
+      <path d="M104,66 V92"></path>
+      <path d="M104,150 V200"></path>
+      <path d="M256,66 V200"></path>
+      <path d="M180,266 V296"></path>
+    </g>
+
+    <!-- A：三大内存厂 -->
+    <rect
+      x="34"
+      y="14"
+      width="140"
+      height="52"
+      rx="9"
+      fill="currentColor"
+      fill-opacity="0.05"
+      stroke="currentColor"
+      stroke-opacity="0.4"></rect>
+    <text x="104" y="36" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor"
+      >三大内存厂</text
+    >
+    <text x="104" y="54" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.72"
+      >SK Hynix · Samsung · Micron</text
+    >
+
+    <!-- LD：台积电流片 logic die -->
+    <rect
+      x="186"
+      y="14"
+      width="140"
+      height="52"
+      rx="9"
+      fill="currentColor"
+      fill-opacity="0.05"
+      stroke="currentColor"
+      stroke-opacity="0.4"></rect>
+    <text x="256" y="36" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor"
+      >台积电 · 流片</text
+    >
+    <text x="256" y="54" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.72"
+      >逻辑芯片 logic die</text
+    >
+
+    <!-- B：产品方 -->
+    <rect
+      x="34"
+      y="98"
+      width="140"
+      height="52"
+      rx="9"
+      fill="currentColor"
+      fill-opacity="0.05"
+      stroke="currentColor"
+      stroke-opacity="0.4"></rect>
+    <text x="104" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor"
+      >产品方</text
+    >
+    <text x="104" y="138" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.72"
+      >Nvidia · AMD · Google</text
+    >
+
+    <!-- 边标签 -->
+    <text x="111" y="83" font-size="10.5" fill="currentColor" opacity="0.78">卖裸 HBM 堆栈</text>
+    <text x="111" y="170" font-size="10.5" fill="currentColor" opacity="0.78"
+      >自购 + 预付锁产能</text
+    >
+    <text x="263" y="120" font-size="10.5" fill="currentColor" opacity="0.78">流片产物</text>
+
+    <!-- C：CoWoS 封装（引力中心，accent 高亮） -->
+    <rect
+      x="30"
+      y="200"
+      width="300"
+      height="62"
+      rx="11"
+      fill="var(--color-accent-weak)"
+      stroke="var(--color-accent)"
+      stroke-width="1.6"></rect>
+    <text x="180" y="226" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor"
+      >台积电 · CoWoS 2.5D 封装</text
+    >
+    <text x="180" y="246" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.75"
+      >硅 interposer 上拼装 logic die + HBM</text
+    >
+
+    <!-- E：成品 -->
+    <rect
+      x="70"
+      y="300"
+      width="220"
+      height="48"
+      rx="9"
+      fill="currentColor"
+      fill-opacity="0.05"
+      stroke="currentColor"
+      stroke-opacity="0.4"></rect>
+    <text x="180" y="329" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor"
+      >成品 AI 加速器</text
+    >
+
+    <!-- 旁注 -->
+    <text x="180" y="376" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.62"
+      >内存由产品方采购、预付锁产能；代工厂只做封装，不代采。</text
+    >
+  </svg>
+  {caption && <figcaption class="text-sm opacity-70">{caption}</figcaption>}
+</figure>
