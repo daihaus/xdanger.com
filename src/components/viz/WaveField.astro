@@ -7,7 +7,8 @@
  *
  * 主题契约（Canvas 不能像 SVG 那样靠 CSS 自动变色，必须手动取色 + 监听）：
  *  - 用 `getComputedStyle(document.documentElement).getPropertyValue('--color-*')` 取色；
- *    只读两主题下都是**字面 oklch** 的 token（本件用 `--color-accent` 与 `--color-link`），
+ *    只读两主题下都是**字面 oklch** 的 token（本件取 `--color-accent` 与 `--color-cat-5`：
+ *    前者随主题换相、后者作为分类色跨主题稳定，正好演示「主角换相 / 分类色稳定」），
  *    避免 `--color-foreground` 在 light 下是 `var(--foreground)` 链式引用、`getComputedStyle`
  *    可能返回未解析值的坑。Canvas 现代浏览器原生接受 oklch() 字符串。
  *  - 用 `MutationObserver` 监听 `<html>` 的 `data-theme` 属性变化重新取色重画 —— 比监听
@@ -45,7 +46,9 @@ const { height = 160, label = "随主题变色的叠加波形动画", caption } 
     private ctx!: CanvasRenderingContext2D;
     private raf = 0;
     private phase = 0;
-    private colors = ["oklch(55.27% 0.195 19.06)", "oklch(70.44% 0.1133 349)"];
+    // Fallbacks = the LIGHT literal values of --color-accent (carmine) and
+    // --color-cat-5 (steel); only used if getComputedStyle comes back empty.
+    private colors = ["oklch(0.55 0.15 19)", "oklch(0.565 0.082 235)"];
     private visible = true;
     private themeObserver?: MutationObserver;
     private resizeObserver?: ResizeObserver;
@@ -110,8 +113,8 @@ const { height = 160, label = "随主题变色的叠加波形动画", caption } 
     private readColors() {
       const root = getComputedStyle(document.documentElement);
       const accent = root.getPropertyValue("--color-accent").trim();
-      const link = root.getPropertyValue("--color-link").trim();
-      this.colors = [accent || this.colors[0], link || this.colors[1]];
+      const steel = root.getPropertyValue("--color-cat-5").trim();
+      this.colors = [accent || this.colors[0], steel || this.colors[1]];
     }
 
     private resize() {

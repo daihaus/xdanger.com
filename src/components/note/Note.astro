@@ -11,8 +11,37 @@ type Props<Tag extends HTMLTag> = Polymorphic<{ as: Tag }> & {
 };
 
 const { as: Tag = "div", note, isPreview = false } = Astro.props;
-const { Content } = await render(note);
 const noteUrl = getNotePath(note);
+
+// 完整 note 页才**渲染** MDX 正文（含其中的交互组件）；列表预览只渲染纯文本摘要，既不渲染
+// `<Content />` 也不调用 `render()`——否则每张卡片都要加载该 MDX 的整个模块图（import 的组件），
+// 还会注水 islands / Canvas / KaTeX，定高组件逃出 line-clamp 给文档塞进幽灵滚动（footer 下方大片
+// 空白即此因）。摘要优先取 frontmatter description，回退到去掉标记后的正文开头。
+const Content = isPreview ? null : (await render(note)).Content;
+
+function bodyExcerpt(body = "") {
+  return body
+    .replace(/^import\s.+$/gm, "") // import 行
+    .replace(/```[\s\S]*?```/g, "") // 代码块
+    .replace(/<[^>]+>/g, " ") // JSX / HTML 标签
+    .replace(/\$[^$]*\$/g, "") // 行内 KaTeX
+    .replace(/`([^`]*)`/g, "$1") // 行内 code
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1") // 图片 / 链接 → 文本
+    .replace(/^#{1,6}\s+/gm, "") // 标题井号
+    .replace(/[*_>#]/g, "") // 强调 / 引用残留
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 200);
+}
+
+const previewText = isPreview ? note.data.description?.trim() || bodyExcerpt(note.body) : "";
+
+// 日期格式与 post 对齐：详情页 `{ month: "long" }` →「June 16, 2007」（同 Masthead），
+// 列表预览用 siteConfig 默认短格式 →「16 Jun 2007」（同 PostPreview）。原先 note 两处都用
+// 带时分的 `MM/DD/YY, hh:mm` 与全站日期约定不符。
+const dateTimeOptions: Intl.DateTimeFormatOptions | undefined = isPreview
+  ? undefined
+  : { month: "long" };
 ---
 
 <article
@@ -36,16 +65,7 @@ const noteUrl = getNotePath(note);
       )
     }
   </Tag>
-  <FormattedDate
-    dateTimeOptions={{
-      hour: "2-digit",
-      minute: "2-digit",
-      year: "2-digit",
-      month: "2-digit",
-      day: "2-digit",
-    }}
-    date={note.data.publishDate}
-  />
+  <FormattedDate dateTimeOptions={dateTimeOptions} date={note.data.publishDate} />
   <div
     class="mt-4 [&>p:last-of-type]:mb-0"
     class:list={[
@@ -54,6 +74,6 @@ const noteUrl = getNotePath(note);
         : `${PROSE_ARTICLE} max-w-none`,
     ]}
   >
-    <Content />
+    {isPreview ? previewText : Content && <Content />}
   </div>
 </article>
