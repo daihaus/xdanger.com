@@ -6,7 +6,8 @@
  * 有合资格本地居民则直接任命（最省）；否则须经 ACRA 持牌 CSP 安排名义董事。
  *
  * 主题契约：中性框用 `currentColor`，推荐路径用 `--color-positive`、受监管路径用
- * `--color-accent`（连同各自的 `*-weak` 填充）——切 `data-theme` 时零 JS 变色。
+ * `--color-negative`（各自带 `*-weak` 填充；用 negative 而非 accent，因 accent 跨主题翻色，
+ * 暗色下会与 positive 同偏绿、丢失红绿对比，negative 则两套主题都稳红）——切 `data-theme` 时零 JS 变色。
  * 纯静态，天然满足 reduced-motion。
  */
 interface Props {
@@ -48,7 +49,7 @@ const H = 300;
 
     <!-- 分支标签 -->
     <text x="150" y="150" font-size="12" fill="var(--color-positive)" font-weight="600">有</text>
-    <text x="296" y="150" font-size="12" fill="var(--color-accent)" font-weight="600">无</text>
+    <text x="296" y="150" font-size="12" fill="var(--color-negative)" font-weight="600">无</text>
 
     <!-- Start -->
     <rect
@@ -80,7 +81,7 @@ const H = 300;
       >有合资格本地居民可任董事？</text
     >
     <text x="220" y="123" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.65"
-      >公民 / PR / EP / PEP</text
+      >公民 / PR / EP / PEP / ONE Pass</text
     >
 
     <!-- Result A：直接任命 -->
@@ -107,8 +108,8 @@ const H = 300;
       width="192"
       height="70"
       rx="8"
-      fill="var(--color-accent-weak)"
-      stroke="var(--color-accent)"
+      fill="var(--color-negative-weak)"
+      stroke="var(--color-negative)"
       stroke-width="1.4"></rect>
     <text x="328" y="203" text-anchor="middle" font-size="13" fill="currentColor" font-weight="600"
       >经 ACRA 持牌 CSP</text
