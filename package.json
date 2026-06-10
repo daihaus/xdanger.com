@@ -19,8 +19,8 @@
     "rebuild": "pnpm run build:site",
     "rebuild:og": "cross-env REFRESH_OG_IMAGES=1 pnpm run build:site",
     "preview": "node scripts/preview-server.mjs",
-    "lint": "autocorrect --lint --strict . && prettier --check . && eslint . && astro check --tsconfig tsconfig.json",
-    "fix": "autocorrect --fix . && prettier --write . && eslint --fix ."
+    "lint": "autocorrect --lint --strict . && oxfmt --check && prettier --check --no-error-on-unmatched-pattern \"**/*.{astro,md,mdx,markdown,json,jsonc,json5,yaml,yml,html,htm,css,scss,less,vue,graphql,gql,hbs,handlebars}\" && oxlint && astro check --tsconfig tsconfig.json",
+    "fix": "autocorrect --fix . && oxfmt && prettier --write --no-error-on-unmatched-pattern \"**/*.{astro,md,mdx,markdown,json,jsonc,json5,yaml,yml,html,htm,css,scss,less,vue,graphql,gql,hbs,handlebars}\" && oxlint --fix"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.2.0",
@@ -57,7 +57,6 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
-    "@eslint/js": "^10.0.1",
     "@iconify-json/circum": "^1.2.2",
     "@iconify-json/fa6-brands": "^1.2.6",
     "@iconify-json/material-symbols-light": "^1.2.76",
@@ -73,11 +72,10 @@
     "autocorrect-node": "^2.14.0",
     "autoprefixer": "^10.5.0",
     "cross-env": "^10.1.0",
-    "eslint": "^10.4.1",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-astro": "^1.7.0",
     "glob": "^13.0.6",
-    "globals": "^17.6.0",
+    "oxfmt": "^0.54.0",
+    "oxlint": "^1.69.0",
+    "oxlint-tsgolint": "^0.23.0",
     "pagefind": "^1.5.2",
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "^0.14.1",
@@ -85,7 +83,6 @@
     "prettier-plugin-tailwindcss": "^0.8.0",
     "reading-time": "^1.5.0",
     "tailwindcss": "^4.3.0",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.60.1"
+    "typescript": "^6.0.3"
   }
 }

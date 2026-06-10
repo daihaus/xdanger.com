@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  // Mirrors the Prettier config in .prettierrc.json for the JS/TS family
+  "printWidth": 100,
+  "trailingComma": "all",
+  // oxfmt owns only the JS/TS family; Prettier (with the astro / tailwindcss /
+  // autocorrect plugins) keeps formatting .astro and every other file type it
+  // supports — see .prettierignore for the split.
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "public",
+    ".astro",
+    ".vercel",
+    "**/*.min.js",
+    "**/*.{astro,json,jsonc,json5,yaml,yml,toml,md,mdx,markdown,css,scss,less,html,htm,vue,svelte,graphql,gql,hbs,handlebars}",
+  ],
+}
