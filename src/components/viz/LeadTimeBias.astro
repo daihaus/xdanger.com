@@ -1,0 +1,159 @@
+---
+/**
+ * LeadTimeBias — 第 1 层「animated-SVG」（零 JS · 静态）。
+ *
+ * 主题：领先时间偏倚。两条平行的人生时间轴共享同一个「死亡时刻」，唯一差别是
+ * 「确诊」这一点被筛查往前挪——于是「从确诊算起的生存期」被拉长，可寿命一天没多。
+ *
+ * 主题契约：轴线 / 文字用 currentColor，确诊点用 --color-accent，死亡点用
+ * --color-negative，「赚到的」假象区间用 --color-positive，切 data-theme 零 JS 变色。
+ * 纯静态，天然满足 reduced-motion；纵向堆叠、viewBox 自适应，窄屏不溢出。
+ */
+interface Props {
+  caption?: string;
+}
+const { caption } = Astro.props;
+const uid = crypto.randomUUID();
+
+const W = 360;
+const padX = 14;
+const ageMin = 60;
+const ageMax = 72;
+const xs = (age: number) => padX + ((age - ageMin) / (ageMax - ageMin)) * (W - padX * 2);
+
+const death = 70; // 两条轴共享的死亡时刻
+const dxScreen = 64; // 筛查把确诊提前到 64
+const dxSymptom = 67; // 不筛查则到 67 出现症状才确诊
+
+const laneA = 96; // 不筛查
+const laneB = 158; // 早筛查
+const H = 210;
+---
+
+<figure class="not-prose text-foreground my-8 flex flex-col items-center gap-3">
+  <svg
+    aria-labelledby={`${uid}-t ${uid}-d`}
+    class="h-auto max-w-full"
+    height={H}
+    role="img"
+    viewBox={`0 0 ${W} ${H}`}
+    width={W}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <title id={`${uid}-t`}>领先时间偏倚示意</title>
+    <desc id={`${uid}-d`}
+      >两条共享同一死亡时刻的人生时间轴：筛查把确诊点从 67 岁提前到 64 岁，从确诊算起的生存期 因此从
+      3 年变成 6 年，但死亡时刻不变、寿命没有延长。</desc
+    >
+
+    <!-- 共享的死亡竖线 -->
+    <line
+      x1={xs(death)}
+      y1="36"
+      x2={xs(death)}
+      y2={laneB + 16}
+      stroke="var(--color-negative)"
+      stroke-width="1.4"
+      stroke-dasharray="4 4"
+      opacity="0.7"></line>
+    <text
+      x={xs(death)}
+      y="26"
+      text-anchor="middle"
+      font-size="11.5"
+      font-weight="700"
+      fill="var(--color-negative)">同一死亡时刻</text
+    >
+    <text x={xs(death)} y="40" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.6"
+      >寿命没有改变</text
+    >
+
+    <!-- Lane A：不筛查 -->
+    <text x={padX} y={laneA - 22} font-size="12.5" font-weight="700" fill="currentColor"
+      >不筛查</text
+    >
+    <line
+      x1={xs(dxSymptom)}
+      y1={laneA}
+      x2={xs(death)}
+      y2={laneA}
+      stroke="var(--color-positive)"
+      stroke-width="7"
+      stroke-linecap="round"
+      opacity="0.32"></line>
+    <circle cx={xs(dxSymptom)} cy={laneA} r="5.5" fill="var(--color-accent)"></circle>
+    <circle cx={xs(death)} cy={laneA} r="5.5" fill="var(--color-negative)"></circle>
+    <text x={xs(dxSymptom)} y={laneA - 12} text-anchor="middle" font-size="11" fill="currentColor"
+      >出现症状才确诊</text
+    >
+    <text
+      x={(xs(dxSymptom) + xs(death)) / 2}
+      y={laneA + 20}
+      text-anchor="middle"
+      font-size="11.5"
+      font-weight="700"
+      fill="currentColor">确诊后存活 3 年</text
+    >
+
+    <!-- Lane B：早筛查 -->
+    <text x={padX} y={laneB - 22} font-size="12.5" font-weight="700" fill="currentColor"
+      >早筛查</text
+    >
+    <line
+      x1={xs(dxScreen)}
+      y1={laneB}
+      x2={xs(death)}
+      y2={laneB}
+      stroke="var(--color-positive)"
+      stroke-width="7"
+      stroke-linecap="round"
+      opacity="0.32"></line>
+    <circle cx={xs(dxScreen)} cy={laneB} r="5.5" fill="var(--color-accent)"></circle>
+    <circle cx={xs(death)} cy={laneB} r="5.5" fill="var(--color-negative)"></circle>
+    <text x={xs(dxScreen)} y={laneB - 12} text-anchor="middle" font-size="11" fill="currentColor"
+      >筛查提前确诊</text
+    >
+    <text
+      x={(xs(dxScreen) + xs(death)) / 2}
+      y={laneB + 20}
+      text-anchor="middle"
+      font-size="11.5"
+      font-weight="700"
+      fill="var(--color-positive)">确诊后存活 6 年</text
+    >
+
+    <!-- 年龄轴 -->
+    <line
+      x1={padX}
+      y1={H - 22}
+      x2={W - padX}
+      y2={H - 22}
+      stroke="var(--color-axis)"
+      stroke-width="1"></line>
+    {
+      [60, 64, 67, 70, 72].map((a) => (
+        <Fragment>
+          <line
+            x1={xs(a)}
+            y1={H - 25}
+            x2={xs(a)}
+            y2={H - 19}
+            stroke="var(--color-axis)"
+            stroke-width="1"
+          />
+          <text
+            x={xs(a)}
+            y={H - 8}
+            text-anchor="middle"
+            font-size="11"
+            fill="currentColor"
+            opacity="0.6"
+          >
+            {a} 岁
+          </text>
+        </Fragment>
+      ))
+    }
+  </svg>
+  {caption && <figcaption class="text-sm opacity-70">{caption}</figcaption>}
+</figure>

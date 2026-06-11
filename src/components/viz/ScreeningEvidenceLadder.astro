@@ -1,0 +1,123 @@
+---
+/**
+ * ScreeningEvidenceLadder — 第 1 层「animated-SVG」（零 JS · 静态）。
+ *
+ * 主题：把各癌种筛查在「癌种特异性死亡」与「全因死亡」两类证据上的强度并排画出来。
+ * 左列几乎排满、右列几乎全空——这一眼之差就是全文论点：能降低某癌死亡的筛查很多，
+ * 能证明延长整体寿命的极少。
+ *
+ * 主题契约：左列证据用 --color-seq-steel 阶梯填充，右列「有全因信号」用
+ * --color-positive、「弊大于利」用 --color-negative，空格用 currentColor 低透明度；
+ * 文字、轴用 currentColor。切 data-theme 零 JS 变色，纯静态满足 reduced-motion。
+ * 纵向行布局、viewBox 自适应，窄屏不溢出。
+ */
+interface Props {
+  caption?: string;
+}
+const { caption } = Astro.props;
+const uid = crypto.randomUUID();
+
+interface Row {
+  name: string;
+  // 0–3 的证据强度
+  specific: number;
+  // 0–3 的全因证据强度；harm=true 表示「弊大于利」
+  allcause: number;
+  harm?: boolean;
+}
+const rows: Row[] = [
+  { name: "乙状结肠镜", specific: 3, allcause: 1 },
+  { name: "结肠镜", specific: 3, allcause: 0 },
+  { name: "HPV / Pap 宫颈", specific: 3, allcause: 0 },
+  { name: "LDCT 肺（高危）", specific: 2, allcause: 0 },
+  { name: "乳腺钼靶", specific: 2, allcause: 0 },
+  { name: "PSA 前列腺", specific: 1, allcause: 0 },
+  { name: "卵巢 CA-125 / 超声", specific: 0, allcause: 0 },
+  { name: "甲状腺超声", specific: 0, allcause: 0, harm: true },
+];
+
+const W = 360;
+const padX = 12;
+const padTop = 40;
+const rowH = 30;
+const labelW = 132;
+const segGap = 4;
+const segW = 20;
+const segH = 13;
+const H = padTop + rows.length * rowH + 14;
+
+const colSpecificX = padX + labelW;
+const colAllcauseX = W - padX - segW * 3 - segGap * 2;
+const rowY = (i: number) => padTop + i * rowH;
+---
+
+<figure class="not-prose text-foreground my-8 flex flex-col items-center gap-3">
+  <svg
+    aria-labelledby={`${uid}-t ${uid}-d`}
+    class="h-auto max-w-full"
+    height={H}
+    role="img"
+    viewBox={`0 0 ${W} ${H}`}
+    width={W}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <title id={`${uid}-t`}>各癌种筛查的两类死亡证据强度对照</title>
+    <desc id={`${uid}-d`}
+      >每行一种筛查，左侧三格表示降低该癌死亡的证据强度，右侧三格表示降低全因死亡的证据强度。
+      左列普遍填满、右列几乎全空，说明能延长整体寿命的癌筛极少。</desc
+    >
+
+    <!-- 列标题 -->
+    <text x={colSpecificX} y="22" font-size="11.5" font-weight="700" fill="currentColor"
+      >癌种特异死亡</text
+    >
+    <text x={colAllcauseX} y="22" font-size="11.5" font-weight="700" fill="currentColor"
+      >全因死亡</text
+    >
+
+    {
+      rows.map((r, i) => (
+        <Fragment>
+          <text
+            x={padX}
+            y={rowY(i) + segH / 2 + 2}
+            dominant-baseline="central"
+            font-size="11.5"
+            fill="currentColor"
+          >
+            {r.name}
+          </text>
+          {[0, 1, 2].map((s) => (
+            <rect
+              x={colSpecificX + s * (segW + segGap)}
+              y={rowY(i)}
+              width={segW}
+              height={segH}
+              rx="3"
+              fill={s < r.specific ? "var(--color-seq-steel-5)" : "currentColor"}
+              fill-opacity={s < r.specific ? 0.9 : 0.1}
+            />
+          ))}
+          {[0, 1, 2].map((s) => (
+            <rect
+              x={colAllcauseX + s * (segW + segGap)}
+              y={rowY(i)}
+              width={segW}
+              height={segH}
+              rx="3"
+              fill={
+                r.harm
+                  ? "var(--color-negative)"
+                  : s < r.allcause
+                    ? "var(--color-positive)"
+                    : "currentColor"
+              }
+              fill-opacity={r.harm ? (s === 0 ? 0.9 : 0.1) : s < r.allcause ? 0.9 : 0.1}
+            />
+          ))}
+        </Fragment>
+      ))
+    }
+  </svg>
+  {caption && <figcaption class="text-sm opacity-70">{caption}</figcaption>}
+</figure>
