@@ -107,13 +107,13 @@ const rowY = (i: number) => padTop + i * rowH;
               height={segH}
               rx="3"
               fill={
-                r.harm
+                r.harm && s === 0
                   ? "var(--color-negative)"
-                  : s < r.allcause
+                  : !r.harm && s < r.allcause
                     ? "var(--color-positive)"
                     : "currentColor"
               }
-              fill-opacity={r.harm ? (s === 0 ? 0.9 : 0.1) : s < r.allcause ? 0.9 : 0.1}
+              fill-opacity={(r.harm && s === 0) || (!r.harm && s < r.allcause) ? 0.9 : 0.1}
             />
           ))}
         </Fragment>
