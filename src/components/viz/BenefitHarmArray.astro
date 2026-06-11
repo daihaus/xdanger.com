@@ -1,0 +1,142 @@
+---
+/**
+ * BenefitHarmArray — 第 1 层「animated-SVG」（零 JS · 静态）。
+ *
+ * 主题：把「每 2000 名女性定期做 10 年乳腺钼靶」的获益与代价画成 2000 格点阵
+ * （natural frequencies / icon array）。1 格获益、10 格被过度诊断治疗、约 200 格
+ * 假阳性惊吓，其余近乎无变化——让「针尖大的获益、成片的代价」一眼可见。
+ * 数字源自 Cochrane（Gøtzsche），属该领域最审慎的一端。
+ *
+ * 主题契约：获益 --color-positive（加描边便于找到那一格），过度诊治
+ * --color-negative，假阳性 --color-cat-3，无变化用 currentColor 低透明度；
+ * 切 data-theme 零 JS 变色，纯静态满足 reduced-motion。viewBox 自适应，窄屏不溢出。
+ */
+interface Props {
+  caption?: string;
+}
+const { caption } = Astro.props;
+const uid = crypto.randomUUID();
+
+const cols = 50;
+const total = 2000;
+const nBenefit = 1;
+const nOvertreated = 10;
+const nFalseAlarm = 210; // 逾 200，与「more than 200」(Cochrane) 一致
+const nNone = total - nBenefit - nOvertreated - nFalseAlarm;
+
+type Kind = "benefit" | "overtreated" | "falsealarm" | "none";
+const kindOf = (i: number): Kind => {
+  if (i < nBenefit) return "benefit";
+  if (i < nBenefit + nOvertreated) return "overtreated";
+  if (i < nBenefit + nOvertreated + nFalseAlarm) return "falsealarm";
+  return "none";
+};
+const fillOf: Record<Kind, string> = {
+  benefit: "var(--color-positive)",
+  overtreated: "var(--color-negative)",
+  falsealarm: "var(--color-cat-3)",
+  none: "currentColor",
+};
+const opacityOf: Record<Kind, number> = {
+  benefit: 1,
+  overtreated: 0.9,
+  falsealarm: 0.85,
+  none: 0.12,
+};
+
+const cell = 5;
+const padX = 16;
+const W = 360; // 与同目录其他 viz 统一为整数 viewBox
+const gridW = W - padX * 2;
+const step = (gridW - cell) / (cols - 1); // 由 W 精确反推格距
+const padTop = 28;
+const rowsN = Math.ceil(total / cols);
+const gridH = (rowsN - 1) * step + cell;
+
+const legend = [
+  { kind: "benefit" as Kind, label: "1 人免于死于乳腺癌" },
+  { kind: "overtreated" as Kind, label: "10 人被过度诊断、接受不必要治疗" },
+  { kind: "falsealarm" as Kind, label: "逾 200 人经历假阳性惊吓" },
+  { kind: "none" as Kind, label: `其余约 ${nNone} 人结局无变化` },
+];
+const legendLineH = 20;
+const legendTop = padTop + gridH + 14;
+const H = legendTop + legend.length * legendLineH;
+
+const cells = Array.from({ length: total }, (_, i) => i);
+---
+
+<figure class="not-prose text-foreground my-8 flex flex-col items-center gap-3">
+  <svg
+    aria-labelledby={`${uid}-t ${uid}-d`}
+    class="h-auto max-w-full"
+    height={H}
+    role="img"
+    viewBox={`0 0 ${W} ${H}`}
+    width={W}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <title id={`${uid}-t`}>每 2000 名女性做 10 年乳腺钼靶的获益与代价</title>
+    <desc id={`${uid}-d`}
+      >{
+        `2000 格点阵：1 格代表免于死于乳腺癌的获益，10 格代表被过度诊断并接受不必要治疗，逾 200 格（${nFalseAlarm} 格）代表假阳性惊吓，其余约 ${nNone} 格结局无变化。数字源自 Cochrane 综述。`
+      }</desc
+    >
+    {
+      cells.map((i) => {
+        const k = kindOf(i);
+        const cx = padX + (i % cols) * step;
+        const cy = padTop + Math.floor(i / cols) * step;
+        return (
+          <rect
+            x={cx}
+            y={cy}
+            width={cell}
+            height={cell}
+            rx="1.2"
+            fill={fillOf[k]}
+            fill-opacity={opacityOf[k]}
+            stroke={k === "benefit" ? "var(--color-positive)" : "none"}
+            stroke-width={k === "benefit" ? 3 : 0}
+          />
+        );
+      })
+    }
+    <!-- 指向那唯一 1 格获益，让小屏读者也能一眼找到 -->
+    <circle
+      cx={padX + cell / 2}
+      cy={padTop + cell / 2}
+      r="4"
+      fill="none"
+      stroke="var(--color-positive)"
+      stroke-width="1.6"></circle>
+    <text x={padX} y="16" font-size="12" font-weight="700" fill="var(--color-positive)"
+      >↓ 唯一 1 格获益</text
+    >
+    {
+      legend.map((l, i) => (
+        <Fragment>
+          <rect
+            x={padX}
+            y={legendTop + i * legendLineH - 9}
+            width="11"
+            height="11"
+            rx="2"
+            fill={fillOf[l.kind]}
+            fill-opacity={opacityOf[l.kind]}
+          />
+          <text
+            x={padX + 18}
+            y={legendTop + i * legendLineH}
+            dominant-baseline="central"
+            font-size="12"
+            fill="currentColor"
+          >
+            {l.label}
+          </text>
+        </Fragment>
+      ))
+    }
+  </svg>
+  {caption && <figcaption class="text-sm opacity-70">{caption}</figcaption>}
+</figure>
