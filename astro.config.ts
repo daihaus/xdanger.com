@@ -14,6 +14,7 @@ import { expressiveCodeOptions } from "./src/site.config";
 import { siteConfig } from "./src/site.config";
 
 // Remark plugins
+import remarkCjkFriendly from "remark-cjk-friendly"; /* `**粗体**。` 等贴邻全角标点的强调按 CJK 友好规则解析 */
 import remarkDirective from "remark-directive"; /* Handle ::: directives as nodes */
 import remarkMath from "remark-math";
 import { remarkAdmonitions } from "./src/plugins/remark-admonitions"; /* Add admonitions */
@@ -166,7 +167,13 @@ export default defineConfig({
         rehypeUnwrapImages,
         rehypePullQuotes,
       ],
-      remarkPlugins: [remarkReadingTime, remarkDirective, remarkAdmonitions, remarkMath],
+      remarkPlugins: [
+        remarkCjkFriendly,
+        remarkReadingTime,
+        remarkDirective,
+        remarkAdmonitions,
+        remarkMath,
+      ],
       remarkRehype: {
         footnoteLabelProperties: {
           className: [""],
