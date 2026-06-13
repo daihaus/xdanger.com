@@ -46,7 +46,7 @@ pnpm fix            # autocorrect + oxfmt + prettier --write + oxlint --fix
 `autocorrect` CLI and prettier-plugin-autocorrect — and with them `pnpm lint`/`fix`. A
 `postinstall` prestep (`scripts/ensure-autocorrect-native.mjs`) repairs this: it builds the
 binding once from the pinned upstream tag with the local Rust toolchain and caches it in
-`~/.cache/autocorrect-node/<version>/`, so later reinstalls are an instant copy. On every
+`~/.cache/autocorrect-node/<version>/<platform>-<arch>/`, so later reinstalls are an instant copy. On every
 platform with upstream binaries it is a silent no-op, and it fails open (warns, never blocks
 install) when cargo/git/network are missing. Drop the hook once upstream ships linux-arm64
 binaries (<https://github.com/huacnlee/autocorrect>).

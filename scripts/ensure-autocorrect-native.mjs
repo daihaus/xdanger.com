@@ -9,8 +9,9 @@
 //   1. If `require("autocorrect-node")` already works, exit silently — every
 //      platform with an upstream binary (CI, Vercel, macOS) takes this path.
 //   2. Otherwise copy a previously built binding from the per-version,
-//      per-triple cache (~/.cache/autocorrect-node/<version>/<platform>-<arch>/)
-//      into the package directory.
+//      per-platform-arch cache
+//      (~/.cache/autocorrect-node/<version>/<platform>-<arch>/) into the
+//      package directory.
 //   3. On a cache miss, build it from the pinned upstream tag with the local
 //      Rust toolchain (`napi build`), then cache + install it.
 //
@@ -78,8 +79,9 @@ try {
 } catch {
   process.exit(0);
 }
-// Namespace the cache by triple: an NFS home shared between x86_64 and arm64
-// hosts would otherwise pool incompatible bindings under one version dir.
+// Namespace the cache by `<platform>-<arch>`: an NFS home shared between x86_64
+// and arm64 hosts would otherwise pool incompatible bindings under one version
+// dir. (The binding's own filename carries the full triple, incl. gnu/musl.)
 const cacheDir = join(
   homedir(),
   ".cache",
