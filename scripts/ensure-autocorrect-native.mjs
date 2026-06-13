@@ -122,18 +122,29 @@ try {
     cwd: crateDir,
     stdio: "inherit",
   });
-  for (const f of readdirSync(crateDir).filter(isBinding)) {
+  const builtFiles = readdirSync(crateDir).filter(isBinding);
+  for (const f of builtFiles) {
     try {
       execFileSync("strip", [join(crateDir, f)], { stdio: "ignore" });
     } catch {
       // unstripped is fine, just bigger
     }
-    mkdirSync(cacheDir, { recursive: true });
-    copyFileSync(join(crateDir, f), join(cacheDir, f));
     copyFileSync(join(crateDir, f), join(pkgDir, f));
   }
+  // Verify BEFORE caching: a build can succeed yet yield a non-loadable `.node`
+  // (glibc/musl mismatch, a container/chroot with a divergent runtime libc, a
+  // stale cargo target). Caching that would poison every later install — cache
+  // hit restores the bad copy, fails to load, rebuilds the same dud, repeats.
   if (!bindingLoads()) throw new Error("built binding still fails to load");
-  console.log(`✓ autocorrect-node ${version}: built native binding from source (cached for reuse)`);
+  // Caching is best-effort: the binding is already in place and verified, so a
+  // cache-write failure (ENOSPC, EACCES on the home) must not fail the install.
+  try {
+    mkdirSync(cacheDir, { recursive: true });
+    for (const f of builtFiles) copyFileSync(join(crateDir, f), join(cacheDir, f));
+    console.log(`✓ autocorrect-node ${version}: built native binding from source (cached for reuse)`);
+  } catch {
+    console.log(`✓ autocorrect-node ${version}: built native binding from source (cache write skipped)`);
+  }
 } catch (err) {
   const reason = err instanceof Error ? err.message : String(err);
   console.warn(
