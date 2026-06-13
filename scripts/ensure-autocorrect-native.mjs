@@ -89,9 +89,16 @@ const cacheDir = join(
 );
 
 // Fast path: a binding built on a previous install is cached for this version.
-if (installFromDir(cacheDir, pkgDir) && bindingLoads()) {
-  console.log(`✓ autocorrect-node ${version}: restored native binding from cache`);
-  process.exit(0);
+// Any I/O failure here (EACCES/ENOSPC/EXDEV, a poisoned cache dir, or the file
+// vanishing between readdir and copy) must not crash postinstall — swallow it
+// and fall through to the slow path, which rebuilds from source.
+try {
+  if (installFromDir(cacheDir, pkgDir) && bindingLoads()) {
+    console.log(`✓ autocorrect-node ${version}: restored native binding from cache`);
+    process.exit(0);
+  }
+} catch {
+  // fall through to rebuild
 }
 
 // Slow path: build from source. Requires cargo + git + network; ~30s once.
