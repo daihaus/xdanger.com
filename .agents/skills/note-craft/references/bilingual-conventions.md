@@ -17,7 +17,7 @@ proper nouns. Mixing freely within a paragraph is fine and matches how bilingual
 
 Products, brands, people, and technology keep their original form; don't force-translate.
 
-- **English proper nouns stay English**: GitHub, Astro, oklch, TSMC.
+- **English proper nouns stay English**: GitHub, Astro, oklch.
 - **Exception ① — Chinese-native companies / orgs** stay Chinese, with English in parens on **first
   mention**: `台积电（TSMC）`、`联发科（MediaTek）`、`华大九天（Empyrean）`. Subsequent mentions: Chinese
   alone.

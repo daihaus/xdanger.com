@@ -186,8 +186,8 @@ fine and natural.
   Chinese with English in parens on first mention — `台积电（TSMC）`, `联发科（MediaTek）`; ② people with
   an established Chinese transliteration stay Chinese (马斯克, 库克).
 - **First-mention term pairing.** Give both languages the first time a technical term appears —
-  `反向传播 (backpropagation)`; subsequent mentions can use either. Gloss an acronym once: `CNN
-  (convolutional neural network, 卷积神经网络)`.
+  `反向传播（backpropagation）`; subsequent mentions can use either. Gloss an acronym once:
+  `CNN（convolutional neural network, 卷积神经网络）`.
 - **Gloss unfamiliar English in reading order.** When an English word a reader might not know first
   appears — including in a visual's caption — append a short Chinese gloss there, e.g.
   `throughput（吞吐量）`. Gloss at the **earliest** appearance, not a later one; don't re-gloss; skip
