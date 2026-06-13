@@ -1,0 +1,94 @@
+---
+/**
+ * CasFifaTimeline — 第 1 层「animated-SVG」（零 JS · 静态）。
+ *
+ * 主题：从瑞士民法典确立 Verein，到 FIFA 落户、CAS 成立、纽约公约与 PILA 织成执行网，
+ * 再到 ECtHR 与 CJEU 开始撬动体系的纵向时间轴。高亮两处转折：2018 ECtHR 认定 CAS 对
+ * Pechstein 属强制仲裁，2024 CJEU Diarra 判 FIFA 转会规则违反欧盟法。
+ *
+ * 主题契约：轴线 / 圆点用 currentColor（继承 `--color-foreground`）与 `--color-accent`，
+ * 文字同理——切 `data-theme` 时零 JS 自动变色。纯静态，天然满足 reduced-motion；
+ * viewBox 自适应，窄屏不溢出。
+ */
+interface Props {
+  caption?: string;
+}
+const { caption } = Astro.props;
+const uid = crypto.randomUUID();
+
+interface Event {
+  date: string;
+  label: string;
+  highlight?: boolean;
+}
+const events: Event[] = [
+  { date: "1904", label: "FIFA 在巴黎成立" },
+  { date: "1912", label: "瑞士民法典生效：Art. 60–79 确立 Verein" },
+  { date: "1932", label: "FIFA 总部迁至苏黎世" },
+  { date: "1958", label: "纽约公约签订，奠定仲裁裁决全球执行网" },
+  { date: "1984", label: "CAS 在洛桑创立（Samaranch 发起）" },
+  { date: "1989", label: "瑞士 PILA 第 12 章生效：国际仲裁框架" },
+  { date: "1994", label: "Paris Agreement：ICAS 成立，CAS 与 IOC 脱钩" },
+  { date: "2003", label: "瑞士联邦最高法院（Lazutina）确认 CAS 独立" },
+  { date: "2015-05-27", label: "Baur au Lac 抓捕 7 名 FIFA 官员（美国主导）" },
+  { date: "2016-07-01", label: "Lex FIFA 生效：私营部门贿赂入刑" },
+  { date: "2018-10-02", label: "ECtHR：CAS 对 Pechstein 属强制仲裁，须公开听证", highlight: true },
+  { date: "2023-12-21", label: "CJEU Super League 案（C-333/21）" },
+  { date: "2024-10-04", label: "CJEU Diarra 案：FIFA 转会规则违反欧盟法", highlight: true },
+];
+
+const padTop = 22;
+const gap = 50;
+const axisX = 16;
+const W = 480;
+const H = padTop * 2 + (events.length - 1) * gap;
+const cy = (i: number) => padTop + i * gap;
+---
+
+<figure class="not-prose text-foreground my-8 flex flex-col items-center gap-3">
+  <svg
+    aria-labelledby={`${uid}-t ${uid}-d`}
+    class="h-auto max-w-full"
+    height={H}
+    role="img"
+    viewBox={`0 0 ${W} ${H}`}
+    width={W}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <title id={`${uid}-t`}>FIFA 与 CAS 关键时间线</title>
+    <desc id={`${uid}-d`}
+      >从 1904 年 FIFA 成立、1912 年瑞士民法典确立 Verein，到 CAS 创立、纽约公约与 PILA
+      织成执行网，再到 2018 年 ECtHR 与 2024 年 CJEU 开始撬动体系的关键节点。</desc
+    >
+    <line
+      x1={axisX}
+      y1={cy(0)}
+      x2={axisX}
+      y2={cy(events.length - 1)}
+      stroke="currentColor"
+      stroke-opacity="0.22"
+      stroke-width="2"></line>
+    {
+      events.map((e, i) => (
+        <Fragment>
+          <circle
+            cx={axisX}
+            cy={cy(i)}
+            r={e.highlight ? 7 : 4.5}
+            fill={e.highlight ? "var(--color-accent)" : "currentColor"}
+            fill-opacity={e.highlight ? 1 : 0.55}
+          />
+          <text x={axisX + 22} y={cy(i)} dominant-baseline="central" font-size="13">
+            <tspan font-weight="700" fill={e.highlight ? "var(--color-accent)" : "currentColor"}>
+              {e.date}
+            </tspan>
+            <tspan dx="8" fill="currentColor" opacity={e.highlight ? 1 : 0.82}>
+              {e.label}
+            </tspan>
+          </text>
+        </Fragment>
+      ))
+    }
+  </svg>
+  {caption && <figcaption class="max-w-prose text-sm opacity-70">{caption}</figcaption>}
+</figure>
