@@ -142,6 +142,12 @@ try {
       `prettier-plugin-autocorrect won't run until this is fixed (needs cargo, git and network)`,
   );
 } finally {
-  if (buildDir) await rm(buildDir, { recursive: true, force: true });
+  // `force: true` ignores a missing path but not EACCES/EBUSY etc.; a throw here
+  // would reject the top-level await and skip the exit(0) below — fail open.
+  try {
+    if (buildDir) await rm(buildDir, { recursive: true, force: true });
+  } catch {
+    // a leaked temp dir is acceptable; crashing postinstall is not
+  }
 }
 process.exit(0);
