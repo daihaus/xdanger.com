@@ -1,0 +1,128 @@
+---
+/**
+ * ForcedConsentChain — 第 1 层「animated-SVG」（零 JS · 静态）。
+ *
+ * 主题：CAS 排他管辖权赖以成立的「强制同意金字塔」。自上而下四层：CAS → 国际单项
+ * 联合会 → 国家协会 → 俱乐部与运动员。左轨表示规则 / 仲裁条款自上而下逐层施加，
+ * 右轨表示争议只能自下而上上诉至 CAS——签字才能参赛，理论上是合同，实际上是垄断下
+ * 的霍布森选择。
+ *
+ * 主题契约：顶层 CAS 用 `--color-accent`（主角色），其余三层用 sequential steel 阶梯
+ * （越往下越深，表达「权力在顶、被约束在底」）；文字、轨线、箭头用 currentColor，切
+ * `data-theme` 时零 JS 自动变色。纯静态，天然满足 reduced-motion；纵向堆叠、viewBox
+ * 自适应，窄屏不溢出。
+ */
+interface Props {
+  caption?: string;
+}
+const { caption } = Astro.props;
+const uid = crypto.randomUUID();
+
+interface Tier {
+  title: string;
+  sub: string;
+  accent?: boolean;
+  step?: number; // sequential steel 阶梯序号
+}
+const tiers: Tier[] = [
+  { title: "CAS 体育仲裁院", sub: "Lausanne · 体育「最高法院」", accent: true },
+  { title: "国际单项联合会 IF", sub: "FIFA · IOC · UEFA · FIBA…", step: 4 },
+  { title: "国家协会", sub: "各国足协 / 奥委会", step: 5 },
+  { title: "俱乐部与运动员", sub: "「签字才能参赛」", step: 6 },
+];
+
+const W = 360;
+const railL = 18;
+const railR = W - 18;
+const boxL = 40;
+const boxR = W - 40;
+const boxW = boxR - boxL;
+const padY = 16;
+const rowH = 58;
+const gap = 11;
+const H = padY * 2 + tiers.length * rowH + (tiers.length - 1) * gap;
+const rowY = (i: number) => padY + i * (rowH + gap);
+const fillFor = (t: Tier) =>
+  t.accent ? "var(--color-accent)" : `var(--color-seq-steel-${t.step})`;
+---
+
+<figure class="not-prose text-foreground my-8 flex flex-col items-center gap-3">
+  <svg
+    aria-labelledby={`${uid}-t ${uid}-d`}
+    class="h-auto max-w-full"
+    height={H}
+    role="img"
+    viewBox={`0 0 ${W} ${H}`}
+    width={W}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <title id={`${uid}-t`}>CAS 强制同意金字塔</title>
+    <desc id={`${uid}-d`}
+      >自上而下四层：CAS、国际单项联合会、国家协会、俱乐部与运动员。规则与仲裁条款自上而下
+      逐层施加，争议只能自下而上上诉至 CAS。</desc
+    >
+    {/* 左轨：规则向下施加（箭头朝下） */}
+    <line
+      x1={railL}
+      y1={rowY(0) + 4}
+      x2={railL}
+      y2={rowY(tiers.length - 1) + rowH - 4}
+      stroke="currentColor"
+      stroke-opacity="0.45"
+      stroke-width="1.6"></line>
+    <path
+      d={`M ${railL - 4} ${rowY(tiers.length - 1) + rowH - 9} L ${railL} ${rowY(tiers.length - 1) + rowH - 1} L ${railL + 4} ${rowY(tiers.length - 1) + rowH - 9} Z`}
+      fill="currentColor"
+      fill-opacity="0.6"></path>
+    {/* 右轨：争议向上上诉（箭头朝上） */}
+    <line
+      x1={railR}
+      y1={rowY(0) + 4}
+      x2={railR}
+      y2={rowY(tiers.length - 1) + rowH - 4}
+      stroke="var(--color-accent)"
+      stroke-opacity="0.6"
+      stroke-width="1.6"></line>
+    <path
+      d={`M ${railR - 4} ${rowY(0) + 9} L ${railR} ${rowY(0) + 1} L ${railR + 4} ${rowY(0) + 9} Z`}
+      fill="var(--color-accent)"></path>
+    {
+      tiers.map((t, i) => (
+        <Fragment>
+          <rect
+            x={boxL}
+            y={rowY(i)}
+            width={boxW}
+            height={rowH}
+            rx="10"
+            fill={fillFor(t)}
+            fill-opacity={t.accent ? 0.18 : 0.16}
+            stroke={fillFor(t)}
+            stroke-width={t.accent ? 2 : 1.4}
+          />
+          <text
+            x={boxL + boxW / 2}
+            y={rowY(i) + 24}
+            text-anchor="middle"
+            font-size="14.5"
+            font-weight="700"
+            fill={t.accent ? "var(--color-accent)" : "currentColor"}
+          >
+            {t.title}
+          </text>
+          <text
+            x={boxL + boxW / 2}
+            y={rowY(i) + 43}
+            text-anchor="middle"
+            font-size="11.5"
+            fill="currentColor"
+            opacity="0.72"
+          >
+            {t.sub}
+          </text>
+        </Fragment>
+      ))
+    }
+  </svg>
+  {caption && <figcaption class="max-w-prose text-sm opacity-70">{caption}</figcaption>}
+</figure>
