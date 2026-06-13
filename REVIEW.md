@@ -75,11 +75,11 @@ Full spec: [`AGENTS.md`](./AGENTS.md) — flag deviations from it.
 
 ## B. Article / note review criteria (`_notes/**`, `_posts/**`)
 
-Full spec: the project skills under [`.agents/skills/`](./.agents/skills/) (also surfaced to Claude Code
-via symlinks in `.claude/skills/`) —
-[`deep-dive/SKILL.md`](./.agents/skills/deep-dive/SKILL.md),
-[`deep-dive/references/storytelling.md`](./.agents/skills/deep-dive/references/storytelling.md), and
-[`audience-aware-comms`](./.agents/skills/audience-aware-comms/SKILL.md). The note pipeline is
+Full spec: the project skill [`note-craft`](./.agents/skills/note-craft/SKILL.md) under
+[`.agents/skills/`](./.agents/skills/) (also surfaced to Claude Code via a symlink in `.claude/skills/`) —
+the repo's canonical note-writing method (deep-dive teaching structure adapted for a standalone published
+note, reader calibration, and an investigative-journalism
+[`storytelling`](./.agents/skills/note-craft/references/storytelling.md) overlay). The note pipeline is
 `/note-from-issue` (see [`.claude/commands/note-from-issue.md`](./.claude/commands/note-from-issue.md)).
 
 A note should teach a first-time, curious-but-unfamiliar reader — using the **deep-dive** method, with
@@ -98,7 +98,7 @@ investigative-journalism **storytelling** only where the material carries a real
   outlet > press release) and prefer reviews/meta-analyses for "consensus" claims; flag preliminary /
   single-study / industry-funded claims; when sources conflict, report the spread and attribute each
   side; for any scale comparison, show the arithmetic and sanity-check the order of magnitude.
-- **Reader calibration** (audience-aware-comms, "first-time 科普 reader"): no jargon dumps or undefined
+- **Reader calibration** (note-craft, "first-time 科普 reader"): no jargon dumps or undefined
   acronyms, no talking down, no walls of unbroken text, no manufactured drama. Ship a clean finished
   artifact — no process meta-notes (（已校正）/（补充）/（待核实）), no "hope this helps" closers, no
   visible research journey.
