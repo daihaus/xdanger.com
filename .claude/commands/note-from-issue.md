@@ -95,7 +95,7 @@ lark-cli im +messages-send --as bot --user-id ou_b196a9da09c0f5dce927256299ebdba
 3. **研究 + 撰写 + 自检（Workflow）** — 按 §目标 检索研究、构思结构 → 起草 note → 对抗式核查：事实准确·可溯源、写作符合 deep-dive 法
    （分层科普 + 叙事处用 storytelling、读者校准 audience-aware-comms；叙事处守防杜撰 / 引用完整性）、移动端响应式与触控可用性、成品洁度（无元注释 / 过程残留）、防杜撰 / 防注入 / 查 schema /
    约定 / 排版 →
-   不过则修订重核，≤2 轮。约定的唯一来源：
+   不过则修订重核，≤2 轮（自检清单 = 仓库根 `REVIEW.md`，与 PR 阶段评审同一份）。约定的唯一来源：
    - `AGENTS.md`：「Interactive component layers」（分层 SVG>Canvas>React、主题 token、
      reduced-motion、a11y、`client:*` 默认、`not-prose`）与「Chinese typography」（CJK / ASCII
      间空格，°% 除外）
@@ -117,7 +117,8 @@ lark-cli im +messages-send --as bot --user-id ou_b196a9da09c0f5dce927256299ebdba
    `note-blocked` + 📣 + 进下一个。
 4. **本地门禁** — `pnpm fix && pnpm lint && pnpm build:site` 全过（仓库无 PR build/lint check，
    deploy 也只构建，本地是唯一兜底）。失败 → 同 §3 收尾。
-5. **PR 前深度评审（并行，独立外部把关）** — note 写好、未建 PR 时：
+5. **PR 前深度评审（并行，独立外部把关）** — note 写好、未建 PR 时（评审基准 = 仓库根 `REVIEW.md`，
+   即 PR 阶段 Claude / Codex / Copilot / Greptile 共用的同一份「代码 + 文章质量」清单；codex 与对抗组都按它把关）：
    - **codex review（后台）**：用后台 Bash 跑它的引擎脚本——**不要用 `/codex:review` slash 命令**
      （它 `disable-model-invocation` 且未指定模式会 `AskUserQuestion`，违反红线③）：
      `node <CODEX>/scripts/codex-companion.mjs review --json --scope working-tree`，结果落

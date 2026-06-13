@@ -1,0 +1,11 @@
+{
+  "instructions": "Apply the repo's shared PR review standards in REVIEW.md (code rules for all PRs; article/note rules when _notes/** or _posts/** changes). Treat its blocking red lines as high severity.",
+  "customContext": {
+    "files": [
+      {
+        "path": "REVIEW.md",
+        "description": "Shared PR review standards for this repo — code/engineering rules (all PRs) and article/note-quality rules incl. citation integrity and no-fabrication guardrails (PRs touching _notes/** or _posts/**)."
+      }
+    ]
+  }
+}
