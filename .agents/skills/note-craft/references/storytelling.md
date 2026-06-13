@@ -1,6 +1,6 @@
 # Storytelling Overlay — narrating the narrative parts
 
-This is the **secondary** craft layer for a deep-dive: the pedagogical method in `SKILL.md` is the
+This is the **secondary** craft layer for a note: the pedagogical method in `SKILL.md` is the
 spine, and you reach for this file only where a part of the topic genuinely *carries a story* — the real
 human story (人物故事), the historical arc of a discovery (历史故事), or the connect-the-dots that links
 several threads into one picture. It is the craft of deep, investigative/explanatory journalism, adapted
@@ -101,6 +101,11 @@ modes of "narrative" writing are exactly the moves a sourced writer must not mak
 
 These are the rules most specific to building a note from web research — and citation integrity is the
 **single most likely fabrication vector for an LLM**, more so than invented scenes.
+
+> Severity, per `REVIEW.md`: **citation integrity** is a §0 publish-blocker, alongside the
+> narrative-fabrication guardrails above. **Evidence tiering, source disagreement, and numeracy sanity**
+> below are strong authoring discipline but are reviewed at §B "meaningful" severity — get them right,
+> but they are not the same blocking gate.
 
 - **Citation integrity.** Cite **only sources you actually retrieved this session.** Never invent a DOI,
   a date, a "2021 study," or attach a real author to a claim they did not make. Quote **verbatim** from
