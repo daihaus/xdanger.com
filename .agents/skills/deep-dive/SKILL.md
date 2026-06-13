@@ -49,6 +49,15 @@ Format example:
 
 If the topic genuinely has no prerequisites, skip this step — don't manufacture them.
 
+**Writing a standalone artifact (a published note, a doc) rather than teaching live?** Don't ask —
+there's no one to answer. Fold the prerequisite beat into prose: a short paragraph that names what helps
+and supplies it on the spot, then continue. Shape:
+
+> 这部分默认你对 **A**、**B** 有点感觉；没有也不要紧，三句话补上：A 是 …；B 是 …；有这两点就够往下读了。
+
+The calibration becomes a self-serve on-ramp instead of a question. (This is the non-interactive default
+for callers like `/note-from-issue`.)
+
 ### 3. Main exposition (layered)
 
 Walk through the concept in **three layers**, in this order:
